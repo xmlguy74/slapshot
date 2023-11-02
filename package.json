@@ -1,0 +1,12 @@
+{
+  "name": "slapshot",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "yarn workspaces run build"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}
