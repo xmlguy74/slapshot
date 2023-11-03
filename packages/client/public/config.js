@@ -1,6 +1,6 @@
 
 var CONFIG = {
-    slapshot: "localhost:3000",
+    slapshot: "localhost:3001",
     homeAssistant: "ha.home",
     secure: true,
     theme: "retro",

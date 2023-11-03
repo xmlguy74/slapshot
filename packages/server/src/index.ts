@@ -3,7 +3,7 @@ import { Level } from 'level';
 import WebSocket from 'ws';
 import { Command, Game, Message, Player, ResultMessage } from './types';
 
-const port = 3000;
+const port = 3001;
 
 const db = new Level('db', { valueEncoding: 'json' });
 const players = db.sublevel('players', { valueEncoding: 'json' });
