@@ -1,11 +1,12 @@
 export type Game = {
-    active: boolean,
+    state: 'pending'|'active'|'complete',
     home?: string,
     homeName?: string,
     homeScore: number,
     visitor?: string,
     visitorName?: string,
     visitorScore: number,
+    timeRemaining?: number,
 }
 
 export type Player = {

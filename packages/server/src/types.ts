@@ -1,9 +1,10 @@
 export type Game = {
-    active: boolean,
+    state: 'pending'|'active'|'complete',
     home?: string,
     homeScore: number,
     visitor?: string,
     visitorScore: number,
+    timeRemaining?: number,
 }
 
 export type Player = {
@@ -13,6 +14,10 @@ export type Player = {
     matches?: number,
     points?: number,
     wins?: number,
+}
+
+export type GameUpdate = {
+    timeRemaining: number;
 }
 
 export interface Command {

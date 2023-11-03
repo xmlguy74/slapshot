@@ -1,13 +1,14 @@
-import { useContext, useEffect, useState } from 'react';
-import { AppSection, BodySection, BodyTitle, FooterSection, FooterText, HeaderSection, StatusbarSection, TaskbarSection } from './App.styled';
+import React, { useContext, useEffect, useState } from 'react';
+import { AppSection, BodySection, BodyTitle, HeaderSection, StatusbarSection, TaskbarSection } from './App.styled';
 import { DateTime, DateTimeMode } from './components/DateTime';
-import { TitleBanner } from './components/TitleBanner';
 import { ToastContainer, toast } from 'react-toastify';
 
 import 'react-toastify/dist/ReactToastify.css';
 import { Leaderboard } from './components/Leaderboard';
 import { Player, PlayerMode } from './components/Player';
 import { SlapshotContext } from './contexts/SlapshotContext';
+
+import formatDuration from 'format-duration';
 
 export interface AppProps {
   refreshRate: number;
@@ -48,7 +49,9 @@ function App(props: AppProps) {
       <StatusbarSection className="Statusbar">
         { currentGame && <>
           <Player mode={PlayerMode.Home} name={currentGame.homeName ?? "Unknown"} score={currentGame.homeScore}></Player>
-          vs.
+          { currentGame.state === 'pending' && "vs." }
+          { currentGame.state === 'active' && <span className="PlayClock">{formatDuration(currentGame?.timeRemaining) }</span> }
+          { currentGame.state === 'complete' && "GAME OVER" }
           <Player mode={PlayerMode.Visitor} name={currentGame.visitorName ?? "Unknown"} score={currentGame.visitorScore}></Player>
         </>}
 

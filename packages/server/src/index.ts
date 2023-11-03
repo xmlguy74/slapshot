@@ -1,7 +1,7 @@
 import express from 'express';
 import { Level } from 'level';
 import WebSocket from 'ws';
-import { Command, Game, Message, Player, ResultMessage } from './types';
+import { Command, Game, GameUpdate, Message, Player, ResultMessage } from './types';
 
 const port = 3001;
 
@@ -45,9 +45,10 @@ app.get('/api/games/current', async(req, res) => {
 app.post('/api/games/current', async (req, res) => {
     try {
         const game: Game = {
-            active: false,
+            state: 'pending',
             homeScore: 0,
-            visitorScore: 0
+            visitorScore: 0,
+            timeRemaining: 600000 /* 10 min */
         }
         await games.put('current', game, null);
         res.sendStatus(200);
@@ -62,8 +63,8 @@ app.post('/api/games/current', async (req, res) => {
 app.put('/api/games/current/start', async (req, res) => {
     try {
         const game = await getGame('current');
-        if (!!game && !game.active) {
-            game.active = true;
+        if (!!game && game.state === 'pending') {
+            game.state = 'active';
             await games.put('current', game, null);
             fireEvent("startgame", game);
             res.sendStatus(200);
@@ -75,10 +76,27 @@ app.put('/api/games/current/start', async (req, res) => {
     }
 });
 
+app.post('/api/games/current/update', async (req, res) => {
+    try {
+        const game = await getGame('current');
+        if (!!game && game.state === 'active') {
+            const update = req.body as GameUpdate;        
+            game.timeRemaining = update.timeRemaining;
+            await games.put('current', game, null);
+            fireEvent("updategame", game);
+            res.sendStatus(200);
+        } else {
+            throw "No active game";
+        }
+    } catch (e) {
+        res.status(500).send(e);
+    }
+});
+
 app.put('/api/games/current/:player/:id', async (req, res) => {
     try {
         const game = await getGame('current');
-        if (!!game && !game.active) {
+        if (!!game && game.state === 'pending') {
             if (req.params.player === 'home' || req.params.player === 'visitor') {
                 const p = await getPlayer(req.params.id);
                 if (p) {
@@ -95,7 +113,7 @@ app.put('/api/games/current/:player/:id', async (req, res) => {
                 throw 'Unknown player'
             }
         } else {
-            throw 'Game already started'
+            throw 'Invalid already state'
         }
     } catch (e) {
         res.status(500).send(e);
@@ -105,7 +123,7 @@ app.put('/api/games/current/:player/:id', async (req, res) => {
 app.post('/api/games/current/score/:player', async (req, res) => {
     try {
         const game = await getGame('current');
-        if (!!game && game.active) {
+        if (!!game && game.state === 'active') {
             if (req.params.player === 'home') {
                 game.homeScore++;
             } else if (req.params.player === 'visitor') {
@@ -144,7 +162,9 @@ app.delete('/api/games/current', async(req, res) => {
             fireEvent("stats", visitor);
         }
 
-        await games.del('current');   
+        game.state = 'complete';
+        game.timeRemaining = 0;
+        await games.put('current', game, null);
         
         fireEvent("gameover");
 

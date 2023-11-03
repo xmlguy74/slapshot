@@ -21,7 +21,10 @@ export function useGameCache(ss: Slapshot): GameCache {
     const ssRef = useRef<Slapshot>();
     ssRef.current = ss;
 
-    const [play] = useSound('../../www/cheer.mp3');
+    const [cheerSound] = useSound('../../www/cheer.mp3');
+    const [buzzerSound] = useSound('../../www/buzzer.wav');
+    const [chargeSound, {sound}] = useSound('../../www/organcharge.mp3');
+    const [notifySound] = useSound('../../www/notification.wav');
    
     useEffect(() => {
         if (ss.ready) {
@@ -44,27 +47,36 @@ export function useGameCache(ss: Slapshot): GameCache {
             ssRef.current.on<Game>("newgame", (event) => {
                 console.log("New game!");
                 setCurrentGame(event.event.data);
+                chargeSound();
             });
 
             ssRef.current.on<Game>("startgame", (event) => {
                 console.log("Start game!");
                 setCurrentGame(event.event.data);
+                buzzerSound();
             });
 
             ssRef.current.on("gameover", (event) => {
                 console.log("Game Over!");
                 setCurrentGame(undefined);
+                buzzerSound();
             });
 
             ssRef.current.on<Game>("1up", (event) => {
                 console.log("Player Up!");
+                setCurrentGame(event.event.data);
+                notifySound();
+            });
+
+            ssRef.current.on<Game>("updategame", (event) => {
+                console.log("Game Update!");
                 setCurrentGame(event.event.data);
             });
 
             ssRef.current.on<Game>("score", (event) => {
                 console.log("Score!");
                 setCurrentGame(event.event.data);
-                play({forceSoundEnabled: true});
+                cheerSound();
             });
 
             ssRef.current.on<Player>("stats", (event) => {
@@ -78,7 +90,7 @@ export function useGameCache(ss: Slapshot): GameCache {
             });
 
         }        
-    }, [ss.ready, play])
+    }, [ss.ready, cheerSound, buzzerSound, chargeSound, notifySound, sound])
 
     return {
         players,
