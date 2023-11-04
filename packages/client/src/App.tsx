@@ -9,9 +9,21 @@ import { Player, PlayerMode } from './components/Player';
 import { SlapshotContext } from './contexts/SlapshotContext';
 
 import formatDuration from 'format-duration';
+import { Game } from './types';
 
 export interface AppProps {
   refreshRate: number;
+}
+
+function getPlayerName(game: Game, name: string): string {
+  switch (game.state) {
+    case 'pending':
+      return name ?? "Tap In!"
+    
+    case 'complete':
+    case 'active':
+      return name;
+  }
 }
 
 function App(props: AppProps) {
@@ -48,11 +60,14 @@ function App(props: AppProps) {
       
       <StatusbarSection className="Statusbar">
         { currentGame && <>
-          <Player mode={PlayerMode.Home} name={currentGame.homeName ?? "Unknown"} score={currentGame.homeScore}></Player>
+          <Player mode={PlayerMode.Home} className={currentGame.state === 'pending' && "PendingPlayer"} name={getPlayerName(currentGame, currentGame.homeName)} score={currentGame.homeScore}></Player>
+          
           { currentGame.state === 'pending' && "vs." }
           { currentGame.state === 'active' && <span className="PlayClock">{formatDuration(currentGame?.timeRemaining) }</span> }
           { currentGame.state === 'complete' && "GAME OVER" }
-          <Player mode={PlayerMode.Visitor} name={currentGame.visitorName ?? "Unknown"} score={currentGame.visitorScore}></Player>
+        
+          <Player mode={PlayerMode.Visitor} className={currentGame.state === 'pending' && "PendingPlayer"} name={getPlayerName(currentGame, currentGame.visitorName)} score={currentGame.visitorScore}></Player>
+        
         </>}
 
         { !currentGame && <>

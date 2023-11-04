@@ -17,17 +17,17 @@ export interface PlayerProps {
 export function Player(props: PlayerProps) {
 
     return (
-        <Container justify={(props.mode === PlayerMode.Home ? 'left' : 'right')}>
+        <Container justify={(props.mode === PlayerMode.Home ? 'left' : 'right')} className={props.className}>
             { props.mode === PlayerMode.Home && <>
                 <Score>{props.score}</Score>
-                <Avatar src="home.png"></Avatar>            
+                <Avatar src="/www/home.png"></Avatar>            
                 <Label>{props.name}</Label>
             </>
             }
 
             { props.mode === PlayerMode.Visitor && <>
                 <Label>{props.name}</Label>
-                <Avatar src="visitors.png"></Avatar>            
+                <Avatar src="/www/visitors.png"></Avatar>            
                 <Score>{props.score}</Score>
             </>            
             }

@@ -3,7 +3,8 @@ import { Level } from 'level';
 import WebSocket from 'ws';
 import { Command, Game, GameUpdate, Message, Player, ResultMessage } from './types';
 
-const port = 3001;
+const PORT = 3001;
+const GAME_TIME = 600000; /* 10 min */
 
 const db = new Level('db', { valueEncoding: 'json' });
 const players = db.sublevel('players', { valueEncoding: 'json' });
@@ -48,7 +49,7 @@ app.post('/api/games/current', async (req, res) => {
             state: 'pending',
             homeScore: 0,
             visitorScore: 0,
-            timeRemaining: 600000 /* 10 min */
+            timeRemaining: GAME_TIME
         }
         await games.put('current', game, null);
         res.sendStatus(200);
@@ -70,6 +71,24 @@ app.put('/api/games/current/start', async (req, res) => {
             res.sendStatus(200);
         } else {
             throw "No game";
+        }
+    } catch (e) {
+        res.status(500).send(e);
+    }
+});
+
+app.put('/api/games/current/restart', async (req, res) => {
+    try {
+        const game = await getGame('current');
+        if (!!game && game.state === 'active') {
+            game.homeScore = 0;
+            game.visitorScore = 0;
+            game.timeRemaining = GAME_TIME
+            await games.put('current', game, null);
+            fireEvent("restartgame", game);
+            res.sendStatus(200);
+        } else {
+            throw "No active game";
         }
     } catch (e) {
         res.status(500).send(e);
@@ -174,8 +193,8 @@ app.delete('/api/games/current', async(req, res) => {
     }
 });
 
-const server = app.listen(port, () => {
-    console.log(`[server]: Server is running at http://localhost:${port}`);
+const server = app.listen(PORT, () => {
+    console.log(`[server]: Server is running at http://localhost:${PORT}`);
 });
 
 function fireEvent(name: string, data?: any) {

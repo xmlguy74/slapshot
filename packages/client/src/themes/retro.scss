@@ -46,7 +46,18 @@ body {
 }
 
 .PlayClock {
+  font-family: Scoreboard;
   font-size: 48pt;
+}
+
+.PendingPlayer {
+  animation: blinker 2s linear infinite;  
+}
+
+@keyframes blinker {
+  50% {
+    opacity: 0;
+  }
 }
 
 .Title {
