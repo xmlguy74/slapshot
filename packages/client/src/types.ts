@@ -1,5 +1,5 @@
 export type Game = {
-    state: 'pending'|'active'|'complete',
+    state: 'pending'|'active'|'complete'|'abort',
     home?: string,
     homeName?: string,
     homeScore: number,

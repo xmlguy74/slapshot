@@ -15,14 +15,15 @@ export interface AppProps {
   refreshRate: number;
 }
 
-function getPlayerName(game: Game, name: string): string {
+function getPlayerName(game: Game, mode: PlayerMode): string {
   switch (game.state) {
     case 'pending':
-      return name ?? "Tap In!"
+      return (mode === PlayerMode.Home ? game.homeName : game.visitorName) ?? "Tap In!"
     
     case 'complete':
     case 'active':
-      return name;
+    case 'abort':
+      return (mode === PlayerMode.Home ? game.homeName : game.visitorName) ?? (mode === PlayerMode.Home ? "Home" : "Away");
   }
 }
 
@@ -60,20 +61,21 @@ function App(props: AppProps) {
       
       <StatusbarSection className="Statusbar">
         { currentGame && <>
-          <Player mode={PlayerMode.Home} className={currentGame.state === 'pending' && "PendingPlayer"} name={getPlayerName(currentGame, currentGame.homeName)} score={currentGame.homeScore}></Player>
+          <Player mode={PlayerMode.Home} className={currentGame.state === 'pending' && "PendingPlayer"} name={getPlayerName(currentGame, PlayerMode.Home)} score={currentGame.homeScore}></Player>
           
           { currentGame.state === 'pending' && "vs." }
-          { currentGame.state === 'active' && <span className="PlayClock">{formatDuration(currentGame?.timeRemaining) }</span> }
+          { currentGame.state === 'active' && <span className="PlayClock">{formatDuration(currentGame?.timeRemaining ?? 0) }</span> }
           { currentGame.state === 'complete' && "GAME OVER" }
+          { currentGame.state === 'abort' && "GAME CANCELED" }
         
-          <Player mode={PlayerMode.Visitor} className={currentGame.state === 'pending' && "PendingPlayer"} name={getPlayerName(currentGame, currentGame.visitorName)} score={currentGame.visitorScore}></Player>
+          <Player mode={PlayerMode.Visitor} className={currentGame.state === 'pending' && "PendingPlayer"} name={getPlayerName(currentGame, PlayerMode.Visitor)} score={currentGame.visitorScore}></Player>
         
         </>}
 
         { !currentGame && <>
-          <Player mode={PlayerMode.Home} name="Home" score={0}></Player>
+          <Player mode={PlayerMode.Home} name="" score={0}></Player>
           GAME OVER
-          <Player mode={PlayerMode.Visitor} name="Visitor" score={0}></Player>        
+          <Player mode={PlayerMode.Visitor} name="" score={0}></Player>        
         </>}
       </StatusbarSection>
 

@@ -112,6 +112,22 @@ app.post('/api/games/current/update', async (req, res) => {
     }
 });
 
+app.post('/api/games/current/abort', async (req, res) => {
+    try {
+        const game = await getGame('current');
+        if (!!game && game.state === 'active') {
+            game.state = 'abort';
+            await games.put('current', game, null);
+            fireEvent("abortgame", game);
+            res.sendStatus(200);
+        } else {
+            throw "No active game";
+        }
+    } catch (e) {
+        res.status(500).send(e);
+    }
+});
+
 app.put('/api/games/current/:player/:id', async (req, res) => {
     try {
         const game = await getGame('current');
@@ -185,7 +201,7 @@ app.delete('/api/games/current', async(req, res) => {
         game.timeRemaining = 0;
         await games.put('current', game, null);
         
-        fireEvent("gameover");
+        fireEvent("gameover", game);
 
         res.sendStatus(200);
     } catch (e) {

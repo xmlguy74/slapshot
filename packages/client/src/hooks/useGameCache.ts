@@ -23,8 +23,9 @@ export function useGameCache(ss: Slapshot): GameCache {
 
     const [cheerSound] = useSound('../../www/cheer.mp3');
     const [buzzerSound] = useSound('../../www/buzzer.wav');
-    const [chargeSound, {sound}] = useSound('../../www/organcharge.mp3');
+    const [chargeSound] = useSound('../../www/organcharge.mp3');
     const [notifySound] = useSound('../../www/notification.wav');
+    const [wahwahwahSound] = useSound('../../www/wahwahwah.mp3');
    
     useEffect(() => {
         if (ss.ready) {
@@ -56,9 +57,9 @@ export function useGameCache(ss: Slapshot): GameCache {
                 buzzerSound();
             });
 
-            ssRef.current.on("gameover", (event) => {
+            ssRef.current.on<Game>("gameover", (event) => {
                 console.log("Game Over!");
-                setCurrentGame(undefined);
+                setCurrentGame(event.event.data);
                 buzzerSound();
             });
 
@@ -71,6 +72,12 @@ export function useGameCache(ss: Slapshot): GameCache {
             ssRef.current.on<Game>("updategame", (event) => {
                 console.log("Game Update!");
                 setCurrentGame(event.event.data);
+            });
+
+            ssRef.current.on<Game>("abortgame", (event) => {
+                console.log("Game Aborted!");
+                setCurrentGame(event.event.data);
+                wahwahwahSound();
             });
 
             ssRef.current.on<Game>("score", (event) => {
@@ -90,7 +97,7 @@ export function useGameCache(ss: Slapshot): GameCache {
             });
 
         }        
-    }, [ss.ready, cheerSound, buzzerSound, chargeSound, notifySound, sound])
+    }, [ss.ready, cheerSound, buzzerSound, chargeSound, notifySound, wahwahwahSound])
 
     return {
         players,
