@@ -9,7 +9,10 @@ export interface LeaderboardProps {
 }
 
 function calcWeight(p: Player): number {
-    return p.points ?? 0;
+    const points = (p.points ?? 0) * 0.33;
+    const wins = (p.wins ?? 0) * 0.33;
+    const matches = (p.matches ?? 0) * 0.33;
+    return points + wins + matches;
 }
 
 export function Leaderboard(props: LeaderboardProps) {
