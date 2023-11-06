@@ -1,14 +1,214 @@
 import express from 'express';
 import { Level } from 'level';
 import WebSocket from 'ws';
-import { Command, Game, GameUpdate, Message, Player, ResultMessage } from './types';
+import { WSCommand, Game, GameUpdate, WSMessage, Player, ResultMessage, MQTTCommand } from './types';
+import * as mqtt from 'mqtt';
 
 const PORT = 3001;
 const GAME_TIME = 600000; /* 10 min */
+const MQTT_BROKER = "mqtt://192.168.15.50";
 
 const db = new Level('db', { valueEncoding: 'json' });
 const players = db.sublevel('players', { valueEncoding: 'json' });
 const games = db.sublevel('games', { valueEncoding: 'json' });
+
+const broker = mqtt.connect(MQTT_BROKER, {
+    username: "slapshot",
+    password: "slapshot"
+});
+
+broker.on("connect", () => {
+    broker.subscribe("slapshot/#", (err) => {
+        if (!err) {
+            console.log("Connected to MQTT.");
+        }
+    });
+});
+
+broker.on("message", async (topic, message) => {
+    if (topic.startsWith("slapshot/games/current")) {
+        const cmd = JSON.parse(message.toString()) as MQTTCommand;
+        switch (cmd?.command) {
+            case 'new':
+                await newGame();
+                break;
+            case "tapin":
+                await tapIn(cmd.team, cmd.player);
+                break;
+            case 'start':
+                await startGame();
+                break;
+            case "restart":
+                await restartGame();
+                break;
+            case "score":
+                await score(cmd.team);
+                break;
+            case "abort":
+                await abortGame();
+                break;
+            case "update":
+                await updateGame(cmd.timeRemaining);
+                break;
+            case "end":
+                await endGame();
+                break;
+            default:
+                console.warn("Unhandled command:" + cmd?.command);
+                break;
+        }
+    }
+});
+
+async function newGame() {
+    try {
+        const game: Game = {
+            state: 'pending',
+            homeScore: 0,
+            visitorScore: 0,
+            timeRemaining: GAME_TIME
+        }
+        await games.put('current', game, null);
+        fireEvent("newgame", game);
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+async function tapIn(team: 'home'|'visitor', player: string) {
+    try {
+        const game = await getGame('current');
+        if (!!game && game.state === 'pending') {
+            const p = await getPlayer(player);
+            if (p) {
+                game[team] = p.id;
+                (game as any)[team + 'Name'] = p.name;
+                await games.put('current', game, null);
+                fireEvent("1up", game);
+            } else {
+                console.log(`Unknown player id: ${player}`);
+                throw 'Unknown player id'
+            }
+        } else {
+            throw 'Invalid already state'
+        }
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+async function startGame() {
+    try {
+        const game = await getGame('current');
+        if (!!game && game.state === 'pending') {
+            game.state = 'active';
+            await games.put('current', game, null);
+            fireEvent("startgame", game);
+        } else {
+            throw "No game";
+        }
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+async function restartGame () {
+    try {
+        const game = await getGame('current');
+        if (!!game && game.state === 'active') {
+            game.homeScore = 0;
+            game.visitorScore = 0;
+            game.timeRemaining = GAME_TIME
+            await games.put('current', game, null);
+            fireEvent("restartgame", game);
+        } else {
+            throw "No active game";
+        }
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+async function abortGame() {
+    try {
+        const game = await getGame('current');
+        if (!!game && game.state === 'active') {
+            game.state = 'abort';
+            await games.put('current', game, null);
+            fireEvent("abortgame", game);
+        } else {
+            throw "No active game";
+        }
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+async function score(team: 'home'|'visitor') {
+    try {
+        const game = await getGame('current');
+        if (!!game && game.state === 'active') {
+            if (team === 'home') {
+                game.homeScore++;
+            } else if (team === 'visitor') {
+                game.visitorScore++;
+            }
+            await games.put('current', game, null);
+            fireEvent("score", game);
+        } else {
+            throw "No active game"
+        }
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+async function updateGame(timeRemaining: number) {
+    try {
+        const game = await getGame('current');
+        if (!!game && game.state === 'active') {
+            game.timeRemaining = timeRemaining;
+            await games.put('current', game, null);
+            fireEvent("updategame", game);
+        } else {
+            throw "No active game";
+        }
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+async function endGame() {
+    try {
+        const game = await getGame('current');
+        const home = await getPlayer(game.home);
+        const visitor = await getPlayer(game.visitor);
+
+        if (!!home) {
+            home.matches++;
+            home.points += game.homeScore;
+            home.wins += (game.homeScore > game.visitorScore ? 1 : 0);
+            await players.put(home.id, home, null);
+            fireEvent("stats", home);
+        }
+
+        if (!!visitor) {
+            visitor.matches++;
+            visitor.points += game.homeScore;
+            visitor.wins += (game.homeScore < game.visitorScore ? 1 : 0);
+            await players.put(visitor.id, visitor, null);
+            fireEvent("stats", visitor);
+        }
+
+        game.state = 'complete';
+        game.timeRemaining = 0;
+        await games.put('current', game, null);
+        
+        fireEvent("gameover", game);
+    } catch (e) {
+        console.error(e);
+    }
+}
 
 const app = express();
 app.use('/api', express.json());
@@ -38,172 +238,6 @@ app.get('/api/games/current', async(req, res) => {
     try {
         const game = await games.get('current');
         res.send(game);
-    } catch (e) {
-        res.status(500).send(e);
-    }
-});
-
-app.post('/api/games/current', async (req, res) => {
-    try {
-        const game: Game = {
-            state: 'pending',
-            homeScore: 0,
-            visitorScore: 0,
-            timeRemaining: GAME_TIME
-        }
-        await games.put('current', game, null);
-        res.sendStatus(200);
-
-        fireEvent("newgame", game);
-
-    } catch (e) {
-        res.status(500).send(e);
-    }
-});
-
-app.put('/api/games/current/start', async (req, res) => {
-    try {
-        const game = await getGame('current');
-        if (!!game && game.state === 'pending') {
-            game.state = 'active';
-            await games.put('current', game, null);
-            fireEvent("startgame", game);
-            res.sendStatus(200);
-        } else {
-            throw "No game";
-        }
-    } catch (e) {
-        res.status(500).send(e);
-    }
-});
-
-app.put('/api/games/current/restart', async (req, res) => {
-    try {
-        const game = await getGame('current');
-        if (!!game && game.state === 'active') {
-            game.homeScore = 0;
-            game.visitorScore = 0;
-            game.timeRemaining = GAME_TIME
-            await games.put('current', game, null);
-            fireEvent("restartgame", game);
-            res.sendStatus(200);
-        } else {
-            throw "No active game";
-        }
-    } catch (e) {
-        res.status(500).send(e);
-    }
-});
-
-app.post('/api/games/current/update', async (req, res) => {
-    try {
-        const game = await getGame('current');
-        if (!!game && game.state === 'active') {
-            const update = req.body as GameUpdate;        
-            game.timeRemaining = update.timeRemaining;
-            await games.put('current', game, null);
-            fireEvent("updategame", game);
-            res.sendStatus(200);
-        } else {
-            throw "No active game";
-        }
-    } catch (e) {
-        res.status(500).send(e);
-    }
-});
-
-app.post('/api/games/current/abort', async (req, res) => {
-    try {
-        const game = await getGame('current');
-        if (!!game && game.state === 'active') {
-            game.state = 'abort';
-            await games.put('current', game, null);
-            fireEvent("abortgame", game);
-            res.sendStatus(200);
-        } else {
-            throw "No active game";
-        }
-    } catch (e) {
-        res.status(500).send(e);
-    }
-});
-
-app.put('/api/games/current/:player/:id', async (req, res) => {
-    try {
-        const game = await getGame('current');
-        if (!!game && game.state === 'pending') {
-            if (req.params.player === 'home' || req.params.player === 'visitor') {
-                const p = await getPlayer(req.params.id);
-                if (p) {
-                    game[req.params.player] = p.id;
-                    (game as any)[req.params.player + 'Name'] = p.name;
-                    await games.put('current', game, null);
-                    fireEvent("1up", game);
-                    res.sendStatus(200);
-                } else {
-                    console.log(`Unknown player id: ${req.params.id}`);
-                    throw 'Unknown player id'
-                }
-            } else{
-                throw 'Unknown player'
-            }
-        } else {
-            throw 'Invalid already state'
-        }
-    } catch (e) {
-        res.status(500).send(e);
-    }
-});
-
-app.post('/api/games/current/score/:player', async (req, res) => {
-    try {
-        const game = await getGame('current');
-        if (!!game && game.state === 'active') {
-            if (req.params.player === 'home') {
-                game.homeScore++;
-            } else if (req.params.player === 'visitor') {
-                game.visitorScore++;
-            }
-            await games.put('current', game, null);
-            fireEvent("score", game);
-            res.sendStatus(200);
-        } else {
-            throw "No active game"
-        }
-    } catch (e) {
-        res.status(500).send(e);
-    }
-});
-
-app.delete('/api/games/current', async(req, res) => {
-    try {
-        const game = await getGame('current');
-        const home = await getPlayer(game.home);
-        const visitor = await getPlayer(game.visitor);
-
-        if (!!home) {
-            home.matches++;
-            home.points += game.homeScore;
-            home.wins += (game.homeScore > game.visitorScore ? 1 : 0);
-            await players.put(home.id, home, null);
-            fireEvent("stats", home);
-        }
-
-        if (!!visitor) {
-            visitor.matches++;
-            visitor.points += game.homeScore;
-            visitor.wins += (game.homeScore < game.visitorScore ? 1 : 0);
-            await players.put(visitor.id, visitor, null);
-            fireEvent("stats", visitor);
-        }
-
-        game.state = 'complete';
-        game.timeRemaining = 0;
-        await games.put('current', game, null);
-        
-        fireEvent("gameover", game);
-
-        res.sendStatus(200);
     } catch (e) {
         res.status(500).send(e);
     }
@@ -247,7 +281,7 @@ wss.on("connection", (websocketConnection) => {
     console.log('connected!');
 
     websocketConnection.on("message", async (data) => {
-        const cmd = JSON.parse(data.toString()) as Command;
+        const cmd = JSON.parse(data.toString()) as WSCommand;
         switch (cmd?.type) {
             case "ping": {
                 console.log("ping-pong");

@@ -20,17 +20,22 @@ export type GameUpdate = {
     timeRemaining: number;
 }
 
-export interface Command {
+export interface MQTTCommand {
+    command: 'new'|'tapin'|'start'|'restart'|'abort'|'score'|'update'|'end',
+    [key: string]: any,
+}
+
+export interface WSCommand {
     id: number,
     type: string,
 }
 
-export interface Message {    
+export interface WSMessage {    
     id: number,
     type: string,
 }
 
-export interface ResultMessage<T> extends Message {
+export interface ResultMessage<T> extends WSMessage {
     success: boolean,
     result: T
 }

@@ -51,6 +51,10 @@ body {
 }
 
 .PendingPlayer {
+  opacity: 0.5;
+}
+
+.PressStart {
   animation: blinker 2s linear infinite;  
 }
 

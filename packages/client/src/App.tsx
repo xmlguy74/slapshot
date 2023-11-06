@@ -61,14 +61,14 @@ function App(props: AppProps) {
       
       <StatusbarSection className="Statusbar">
         { currentGame && <>
-          <Player mode={PlayerMode.Home} className={currentGame.state === 'pending' && "PendingPlayer"} name={getPlayerName(currentGame, PlayerMode.Home)} score={currentGame.homeScore}></Player>
+          <Player mode={PlayerMode.Home} className={currentGame.state === 'pending' && !currentGame.home && "PendingPlayer"} name={getPlayerName(currentGame, PlayerMode.Home)} score={currentGame.homeScore}></Player>
           
-          { currentGame.state === 'pending' && "vs." }
+          { currentGame.state === 'pending' && <span className="PressStart">PRESS START</span> }
           { currentGame.state === 'active' && <span className="PlayClock">{formatDuration(currentGame?.timeRemaining ?? 0) }</span> }
           { currentGame.state === 'complete' && "GAME OVER" }
           { currentGame.state === 'abort' && "GAME CANCELED" }
         
-          <Player mode={PlayerMode.Visitor} className={currentGame.state === 'pending' && "PendingPlayer"} name={getPlayerName(currentGame, PlayerMode.Visitor)} score={currentGame.visitorScore}></Player>
+          <Player mode={PlayerMode.Visitor} className={currentGame.state === 'pending' && !currentGame.visitor && "PendingPlayer"} name={getPlayerName(currentGame, PlayerMode.Visitor)} score={currentGame.visitorScore}></Player>
         
         </>}
 
