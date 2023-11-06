@@ -1,5 +1,5 @@
 export type Game = {
-    state: 'pending'|'active'|'complete'|'abort',
+    state: 'pending'|'active'|'complete'|'abort'|'paused',
     home?: string,
     homeScore: number,
     visitor?: string,
@@ -21,7 +21,7 @@ export type GameUpdate = {
 }
 
 export interface MQTTCommand {
-    command: 'new'|'tapin'|'start'|'restart'|'abort'|'score'|'update'|'end',
+    command: 'new'|'tapin'|'start'|'restart'|'abort'|'score'|'update'|'end'|'pause',
     [key: string]: any,
 }
 

@@ -26,6 +26,7 @@ export function useGameCache(ss: Slapshot): GameCache {
     const [chargeSound] = useSound('../../www/organcharge.mp3');
     const [notifySound] = useSound('../../www/notification.wav');
     const [wahwahwahSound] = useSound('../../www/wahwahwah.mp3');
+    const [whistleSound] = useSound('../../www/whistle.mp3');
    
     useEffect(() => {
         if (ss.ready) {
@@ -51,10 +52,22 @@ export function useGameCache(ss: Slapshot): GameCache {
                 chargeSound();
             });
 
-            ssRef.current.on<Game>("startgame", (event) => {
-                console.log("Start game!");
+            ssRef.current.on<Game>("restartgame", (event) => {
+                console.log("Restart game!");
                 setCurrentGame(event.event.data);
                 buzzerSound();
+            });
+
+            ssRef.current.on<Game>("startgame", (event) => {
+                console.log("Start game!");
+                const wasPaused = currentGameRef.current?.state === 'paused';
+                setCurrentGame(event.event.data);
+                
+                if (wasPaused) {
+                    whistleSound();
+                } else {                    
+                    buzzerSound();
+                }
             });
 
             ssRef.current.on<Game>("gameover", (event) => {
@@ -80,6 +93,12 @@ export function useGameCache(ss: Slapshot): GameCache {
                 wahwahwahSound();
             });
 
+            ssRef.current.on<Game>("pausegame", (event) => {
+                console.log("Game Paused!");
+                setCurrentGame(event.event.data);
+                whistleSound();
+            });
+
             ssRef.current.on<Game>("score", (event) => {
                 console.log("Score!");
                 setCurrentGame(event.event.data);
@@ -97,7 +116,7 @@ export function useGameCache(ss: Slapshot): GameCache {
             });
 
         }        
-    }, [ss.ready, cheerSound, buzzerSound, chargeSound, notifySound, wahwahwahSound])
+    }, [ss.ready, cheerSound, buzzerSound, chargeSound, notifySound, wahwahwahSound, whistleSound])
 
     return {
         players,

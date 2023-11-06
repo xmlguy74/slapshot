@@ -23,7 +23,7 @@ function getPlayerName(game: Game, mode: PlayerMode): string {
     case 'complete':
     case 'active':
     case 'abort':
-      return (mode === PlayerMode.Home ? game.homeName : game.visitorName) ?? (mode === PlayerMode.Home ? "Home" : "Away");
+      return (mode === PlayerMode.Home ? game.homeName : game.visitorName) ?? (mode === PlayerMode.Home ? "Home" : "Visitor");
   }
 }
 
@@ -31,7 +31,6 @@ function App(props: AppProps) {
   
   const [config] = useState<Configuration>(window.CONFIG);
 
-  //const { ha, states } = useContext(HomeAssistantContext);
   const { ss, currentGame } = useContext(SlapshotContext);
     
   useEffect(() => {
@@ -64,7 +63,8 @@ function App(props: AppProps) {
           <Player mode={PlayerMode.Home} className={currentGame.state === 'pending' && !currentGame.home && "PendingPlayer"} name={getPlayerName(currentGame, PlayerMode.Home)} score={currentGame.homeScore}></Player>
           
           { currentGame.state === 'pending' && <span className="PressStart">PRESS START</span> }
-          { currentGame.state === 'active' && <span className="PlayClock">{formatDuration(currentGame?.timeRemaining ?? 0) }</span> }
+          { currentGame.state === 'active' && <span className="PlayClock" data-low={(currentGame?.timeRemaining ?? 0) < 15000 ? true : false}>{formatDuration(currentGame?.timeRemaining ?? 0) }</span> }
+          { currentGame.state === 'paused' && "TIMEOUT" }
           { currentGame.state === 'complete' && "GAME OVER" }
           { currentGame.state === 'abort' && "GAME CANCELED" }
         

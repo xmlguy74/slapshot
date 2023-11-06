@@ -53,6 +53,9 @@ broker.on("message", async (topic, message) => {
             case "end":
                 await endGame();
                 break;
+            case "pause":
+                await pauseGame();
+                break;
             default:
                 console.warn("Unhandled command:" + cmd?.command);
                 break;
@@ -100,7 +103,7 @@ async function tapIn(team: 'home'|'visitor', player: string) {
 async function startGame() {
     try {
         const game = await getGame('current');
-        if (!!game && game.state === 'pending') {
+        if (!!game && (game.state === 'pending' || game.state === 'paused')) {
             game.state = 'active';
             await games.put('current', game, null);
             fireEvent("startgame", game);
@@ -112,10 +115,25 @@ async function startGame() {
     }
 }
 
+async function pauseGame() {
+    try {
+        const game = await getGame('current');
+        if (isActiveGame(game)) {
+            game.state = 'paused';
+            await games.put('current', game, null);
+            fireEvent("pausegame", game);
+        } else {
+            throw "No game";
+        }
+    } catch (e) {
+        console.error(e);
+    }
+}
+
 async function restartGame () {
     try {
         const game = await getGame('current');
-        if (!!game && game.state === 'active') {
+        if (isActiveGame(game)) {
             game.homeScore = 0;
             game.visitorScore = 0;
             game.timeRemaining = GAME_TIME
@@ -132,7 +150,7 @@ async function restartGame () {
 async function abortGame() {
     try {
         const game = await getGame('current');
-        if (!!game && game.state === 'active') {
+        if (isActiveGame(game)) {
             game.state = 'abort';
             await games.put('current', game, null);
             fireEvent("abortgame", game);
@@ -147,7 +165,7 @@ async function abortGame() {
 async function score(team: 'home'|'visitor') {
     try {
         const game = await getGame('current');
-        if (!!game && game.state === 'active') {
+        if (isActiveGame(game)) {
             if (team === 'home') {
                 game.homeScore++;
             } else if (team === 'visitor') {
@@ -166,7 +184,7 @@ async function score(team: 'home'|'visitor') {
 async function updateGame(timeRemaining: number) {
     try {
         const game = await getGame('current');
-        if (!!game && game.state === 'active') {
+        if (isActiveGame(game)) {
             game.timeRemaining = timeRemaining;
             await games.put('current', game, null);
             fireEvent("updategame", game);
@@ -255,6 +273,10 @@ function fireEvent(name: string, data?: any) {
             data
         }
     })));
+}
+
+function isActiveGame(game?: Game) {
+    return game?.state == 'active' || game?.state == 'paused';
 }
 
 async function getPlayer(id: string): Promise<Player> {

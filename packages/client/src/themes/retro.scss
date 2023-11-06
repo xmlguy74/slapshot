@@ -50,12 +50,17 @@ body {
   font-size: 48pt;
 }
 
+.PlayClock[data-low="true"] {
+  color: red;
+  animation: blinker 2s linear infinite;  
+}
+
 .PendingPlayer {
   opacity: 0.5;
 }
 
 .PressStart {
-  animation: blinker 2s linear infinite;  
+  animation: blinker 3s linear infinite;  
 }
 
 @keyframes blinker {

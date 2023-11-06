@@ -1,7 +1,9 @@
-import { useContext } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import { SlapshotContext } from "../contexts/SlapshotContext";
 import { Column, Container, Header, Row, RowBody } from "./Leaderboard.styled";
 import { Player } from "../types";
+
+const PAGE_SIZE = 7;
 
 export interface LeaderboardProps {
 }
@@ -13,6 +15,22 @@ function calcWeight(p: Player): number {
 export function Leaderboard(props: LeaderboardProps) {
 
     const { players } = useContext(SlapshotContext);
+    
+    const [ totalPlayers, setTotalPlayers ] = useState(0);
+    const [ currentPage, setCurrentPage ] = useState(1);
+    
+    useEffect(() => {
+        setTotalPlayers(players.length);
+    }, [players]);
+
+    useEffect(() => {
+        const timer = setInterval(() => {
+            const pages = Math.floor(totalPlayers / PAGE_SIZE) + 1;
+            const nextPage = (currentPage % pages) + 1;
+            setCurrentPage(nextPage);
+        }, 7000);
+        return () => clearInterval(timer);
+    }, [totalPlayers, currentPage]);
 
     return (
         <Container>
@@ -31,10 +49,11 @@ export function Leaderboard(props: LeaderboardProps) {
             {
                 players
                     .sort((a, b) => calcWeight(a) < calcWeight(b) ? 1 : -1)
+                    .slice((currentPage - 1) * PAGE_SIZE, ((currentPage - 1) * PAGE_SIZE) + PAGE_SIZE)
                     .map((p, i) => 
                         <Row key={p.id}>                            
                             <RowBody>                        
-                                <Column>{i + 1}</Column>                
+                                <Column>{((currentPage - 1) * PAGE_SIZE) + i + 1}</Column>
                                 <Column>{p.name}</Column>                
                                 <Column>{p.matches ?? 0}</Column>                
                                 <Column>{p.points ?? 0}</Column>                

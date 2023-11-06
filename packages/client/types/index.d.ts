@@ -1,7 +1,5 @@
 interface Configuration {
     slapshot: string,
-    homeAssistant: string,
-    secure: boolean,
     theme: string,
     title: string,
     subtitle: string,
@@ -9,8 +7,6 @@ interface Configuration {
     showDate: boolean,
     showFooter: boolean,
 }
-
-type MetadataReducer<T> = (id: string, entity: Entity, context: HomeAssistantContext) => T
 
 type MetadataMap<T> = Dict<string, T>
 
