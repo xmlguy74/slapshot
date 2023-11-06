@@ -201,25 +201,10 @@ export function useSlapshot(hostname: string): Slapshot {
         return () => clearInterval(handle);
     }, [doPing])
 
-    // async function api(method: string, path: string) {
-    //     if (path.startsWith('/')) {
-    //         path = path.substring(1);
-    //     }
-        
-    //     const res = await fetch('http://' + hostname + '/api/' + path, {
-    //         headers: {
-    //             'Authorization': 'Bearer ' + authToken
-    //         }
-    //     });
-    
-    //     return (await res.json());
-    // }
-
     return {
         ready,
         connectionState,
         send,
         on,
-        //api,
     }
 }

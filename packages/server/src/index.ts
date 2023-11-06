@@ -89,11 +89,11 @@ async function tapIn(team: 'home'|'visitor', player: string) {
                 await games.put('current', game, null);
                 fireEvent("1up", game);
             } else {
-                console.log(`Unknown player id: ${player}`);
-                throw 'Unknown player id'
+                console.warn(`Unknown player id: ${player}`);
+                fireEvent("0up");
             }
         } else {
-            throw 'Invalid already state'
+            throw 'Invalid game state'
         }
     } catch (e) {
         console.error(e);
@@ -134,6 +134,7 @@ async function restartGame () {
     try {
         const game = await getGame('current');
         if (isActiveGame(game)) {
+            game.state = 'active';
             game.homeScore = 0;
             game.visitorScore = 0;
             game.timeRemaining = GAME_TIME
@@ -165,7 +166,7 @@ async function abortGame() {
 async function score(team: 'home'|'visitor') {
     try {
         const game = await getGame('current');
-        if (isActiveGame(game)) {
+        if (game?.state == 'active') {
             if (team === 'home') {
                 game.homeScore++;
             } else if (team === 'visitor') {

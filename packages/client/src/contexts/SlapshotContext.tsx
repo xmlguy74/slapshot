@@ -7,6 +7,10 @@ interface SlapshotContextType {
     ss: Slapshot,
     players: Player[],
     currentGame?: Game,
+    message?: {
+        error: boolean,
+        text: string,
+    }
 }
 
 export const SlapshotContext = React.createContext<SlapshotContextType>(
@@ -14,6 +18,7 @@ export const SlapshotContext = React.createContext<SlapshotContextType>(
     ss: null,
     players: [],
     currentGame: null,
+    message: null,
   }
 )
 
@@ -24,10 +29,10 @@ export interface SlapshotProviderProps {
 export function SlapshotProvider(props: React.PropsWithChildren<SlapshotProviderProps>) {
     
     const ss = useSlapshot(props.hostname);
-    const { players, currentGame } = useGameCache(ss);
+    const { players, currentGame, message } = useGameCache(ss);
     
     return (
-        <SlapshotContext.Provider value={{ss, players, currentGame}}>
+        <SlapshotContext.Provider value={{ss, players, currentGame, message}}>
             {props.children}
         </SlapshotContext.Provider>
     );
