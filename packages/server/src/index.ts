@@ -249,6 +249,36 @@ app.post('/api/players', async (req, res) => {
         fireEvent("newplayer", player);
         res.sendStatus(200);
     } catch (e) {
+        console.error(e);
+        res.status(500).send(e);
+    }
+});
+
+app.delete('/api/players', async (req, res) => {
+    try {
+        await players.clear();
+        fireEvent("clearplayers");
+        res.sendStatus(200);
+    } catch (e) {
+        console.error(e);
+        res.status(500).send(e);
+    }
+});
+
+app.delete('/api/stats', async (req, res) => {
+    try {
+        const all = await players.values<string, Player>(null).all()
+        for (let i = 0; i < all.length; i++) {
+            const p = all[i];
+            p.matches = 0;
+            p.points = 0;
+            p.wins = 0;
+            await players.put(p.id, p, null);
+        }
+        fireEvent("clearstats", all);
+        res.sendStatus(200);
+    } catch (e) {
+        console.error(e);
         res.status(500).send(e);
     }
 });
