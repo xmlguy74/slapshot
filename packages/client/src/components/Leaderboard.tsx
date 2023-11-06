@@ -54,7 +54,7 @@ export function Leaderboard(props: LeaderboardProps) {
                     .sort((a, b) => calcWeight(a) < calcWeight(b) ? 1 : -1)
                     .slice((currentPage - 1) * PAGE_SIZE, ((currentPage - 1) * PAGE_SIZE) + PAGE_SIZE)
                     .map((p, i) => 
-                        <Row key={p.id}>                            
+                        <Row key={p.id} className="fade-in">                            
                             <RowBody>                        
                                 <Column>{((currentPage - 1) * PAGE_SIZE) + i + 1}</Column>
                                 <Column>{p.name}</Column>                

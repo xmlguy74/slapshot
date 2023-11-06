@@ -23,6 +23,7 @@ function getPlayerName(game: Game, mode: PlayerMode): string {
     case 'complete':
     case 'active':
     case 'abort':
+    case 'paused':
       return (mode === PlayerMode.Home ? game.homeName : game.visitorName) ?? (mode === PlayerMode.Home ? "Home" : "Visitor");
   }
 }
@@ -71,9 +72,18 @@ function App(props: AppProps) {
           <Player mode={PlayerMode.Home} className={currentGame.state === 'pending' && !currentGame.home && "PendingPlayer"} name={getPlayerName(currentGame, PlayerMode.Home)} score={currentGame.homeScore}></Player>
           
           { currentGame.state === 'pending' && <span className="PressStart">PRESS START</span> }
+          
           { currentGame.state === 'active' && <span className="PlayClock" data-low={(currentGame?.timeRemaining ?? 0) < 15000 ? true : false}>{formatDuration(currentGame?.timeRemaining ?? 0) }</span> }
-          { currentGame.state === 'paused' && "TIMEOUT" }
+          
+          { currentGame.state === 'paused' && 
+          <div>
+            <div className="PlayClock PlayClock--paused" data-low={(currentGame?.timeRemaining ?? 0) < 15000 ? true : false}>{formatDuration(currentGame?.timeRemaining ?? 0) }</div>
+            TIMEOUT
+          </div>
+          }
+          
           { currentGame.state === 'complete' && "GAME OVER" }
+          
           { currentGame.state === 'abort' && "GAME CANCELED" }
         
           <Player mode={PlayerMode.Visitor} className={currentGame.state === 'pending' && !currentGame.visitor && "PendingPlayer"} name={getPlayerName(currentGame, PlayerMode.Visitor)} score={currentGame.visitorScore}></Player>
