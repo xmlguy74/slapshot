@@ -203,16 +203,16 @@ async function endGame() {
         const home = await getPlayer(game.home);
         const visitor = await getPlayer(game.visitor);
 
-        if (!!home) {
-            home.matches++;
+        if (home) {
+            home.matches += 1;
             home.points += game.homeScore;
             home.wins += (game.homeScore > game.visitorScore ? 1 : 0);
             await players.put(home.id, home, null);
             fireEvent("stats", home);
         }
 
-        if (!!visitor) {
-            visitor.matches++;
+        if (visitor) {
+            visitor.matches += 1;
             visitor.points += game.homeScore;
             visitor.wins += (game.homeScore < game.visitorScore ? 1 : 0);
             await players.put(visitor.id, visitor, null);
