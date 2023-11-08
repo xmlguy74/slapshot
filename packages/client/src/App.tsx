@@ -10,6 +10,7 @@ import { SlapshotContext } from './contexts/SlapshotContext';
 
 import formatDuration from 'format-duration';
 import { Game } from './types';
+import { Goal } from './components/Goal';
 
 export interface AppProps {
   refreshRate: number;
@@ -32,7 +33,7 @@ function App(props: AppProps) {
   
   const [config] = useState<Configuration>(window.CONFIG);
 
-  const { ss, currentGame, message } = useContext(SlapshotContext);
+  const { ss, currentGame, goal, message } = useContext(SlapshotContext);
     
   useEffect(() => {
     if (ss.ready) {
@@ -54,6 +55,7 @@ function App(props: AppProps) {
 
   return (
     <AppSection className="App">
+
       <TaskbarSection className="Taskbar">
         <DateTime className="Time" mode={DateTimeMode.Time} style={{visibility: config.showTime ? 'visible' : 'hidden'}}></DateTime>
         <DateTime className="Date" mode={DateTimeMode.Date} style={{visibility: config.showDate ? 'visible' : 'hidden'}}></DateTime>
@@ -96,7 +98,6 @@ function App(props: AppProps) {
           <Player mode={PlayerMode.Visitor} name="" score={0}></Player>        
         </>}
       </StatusbarSection>
-
       
       <ToastContainer 
         position="bottom-right" 
@@ -106,6 +107,8 @@ function App(props: AppProps) {
         pauseOnFocusLoss={false} 
         limit={3}
         theme='colored' />
+
+      <Goal text={goal && "GOAL!"}/>
     
     </AppSection>
   );
