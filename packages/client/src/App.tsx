@@ -93,9 +93,7 @@ function App(props: AppProps) {
         </>}
 
         { !currentGame && <>
-          <Player mode={PlayerMode.Home} name="" score={0}></Player>
-          GAME OVER
-          <Player mode={PlayerMode.Visitor} name="" score={0}></Player>        
+          SYSTEM OFF
         </>}
       </StatusbarSection>
       

@@ -55,6 +55,9 @@ broker.on("message", async (topic, message) => {
                 break;
             case "pause":
                 await pauseGame();
+                break;            
+            case "off":
+                await off();
                 break;
             default:
                 console.warn("Unhandled command:" + cmd?.command);
@@ -62,6 +65,15 @@ broker.on("message", async (topic, message) => {
         }
     }
 });
+
+async function off() {
+    try {
+        await games.del('current');
+        fireEvent("off");
+    } catch (e) {
+        console.error(e);
+    }
+}
 
 async function newGame() {
     try {

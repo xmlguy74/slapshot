@@ -165,6 +165,11 @@ export function useGameCache(ss: Slapshot): GameCache {
             ssRef.current.on<Player[]>("clearstats", (event) => {                
                 setPlayers(event.event.data);
             });
+
+            ssRef.current.on("off", (event) => {
+                setCurrentGame(null);
+                stopAllSounds();
+            });
         }        
     }, [
         ss.ready, 
