@@ -42,7 +42,7 @@ broker.on("message", async (topic, message) => {
                 await startGame();
                 break;
             case "restart":
-                await restartGame();
+                await restartGame(cmd.time);
                 break;
             case "score":
                 await score(cmd.team);
@@ -145,14 +145,14 @@ async function pauseGame() {
     }
 }
 
-async function restartGame () {
+async function restartGame (time? :number) {
     try {
         const game = await getGame('current');
         if (isActiveGame(game)) {
             game.state = 'active';
             game.homeScore = 0;
             game.visitorScore = 0;
-            game.timeRemaining = GAME_TIME
+            game.timeRemaining = GAME_TIME ?? time;
             await games.put('current', game, null);
             fireEvent("restartgame", game);
         } else {
