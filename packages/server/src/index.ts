@@ -320,6 +320,8 @@ app.delete('/api/stats', async (req, res) => {
             p.matches = 0;
             p.points = 0;
             p.wins = 0;
+            p.loses = 0;
+            p.ties = 0;
             await players.put(p.id, p, null);
         }
         fireEvent("clearstats", all);
