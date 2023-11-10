@@ -262,6 +262,11 @@ app.get('/api/players', async (req, res) => {
 app.post('/api/players', async (req, res) => {
     try {
         const added = req.body as Player;
+        added.matches = 0;
+        added.wins = 0;
+        added.loses = 0;
+        added.ties = 0;
+        added.points = 0;
         const existing = await getPlayer(added.id);
         const player = {...existing, ...added};
         await players.put(player.id, player, null);
@@ -298,11 +303,11 @@ app.delete('/api/players/:id', async (req, res) => {
 app.put('/api/players/:id', async (req, res) => {
     try {
         const player = await getPlayer(req.params.id);
-        player.matches = req.body.matches ?? player.matches;
-        player.wins = req.body.wins ?? player.wins;
-        player.loses = req.body.loses ?? player.loses;
-        player.ties = req.body.ties ?? player.ties;
-        player.points = req.body.points ?? req.body.points;
+        player.matches = req.body.matches ?? player.matches ?? 0;
+        player.wins = req.body.wins ?? player.wins ?? 0;
+        player.loses = req.body.loses ?? player.loses ?? 0;
+        player.ties = req.body.ties ?? player.ties ?? 0;
+        player.points = req.body.points ?? req.body.points ?? 0;
         await players.put(player.id, player, null);
         fireEvent("stats", player);
         res.sendStatus(200);
