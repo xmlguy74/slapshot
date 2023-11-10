@@ -277,6 +277,17 @@ app.delete('/api/players', async (req, res) => {
     }
 });
 
+app.delete('/api/players/:id', async (req, res) => {
+    try {
+        await players.del(req.params.id);
+        fireEvent("removeplayer", {id: req.params.id});
+        res.sendStatus(200);
+    } catch (e) {
+        console.error(e);
+        res.status(500).send(e);
+    }
+});
+
 app.delete('/api/stats', async (req, res) => {
     try {
         const all = await players.values<string, Player>(null).all()

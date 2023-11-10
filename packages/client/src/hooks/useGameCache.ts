@@ -162,6 +162,10 @@ export function useGameCache(ss: Slapshot): GameCache {
                 setPlayers([]);
             });
 
+            ssRef.current.on<{id: string}>("removeplayer", (event) => {
+                setPlayers([...playersRef.current.filter(p => p.id !== event.event.data.id)]);
+            });
+
             ssRef.current.on<Player[]>("clearstats", (event) => {                
                 setPlayers(event.event.data);
             });
