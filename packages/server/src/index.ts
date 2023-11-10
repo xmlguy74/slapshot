@@ -300,6 +300,8 @@ app.put('/api/players/:id', async (req, res) => {
         const player = await getPlayer(req.params.id);
         player.matches = req.body.matches ?? player.matches;
         player.wins = req.body.wins ?? player.wins;
+        player.loses = req.body.loses ?? player.loses;
+        player.ties = req.body.ties ?? player.ties;
         player.points = req.body.points ?? req.body.points;
         await players.put(player.id, player, null);
         fireEvent("stats", player);

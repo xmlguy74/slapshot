@@ -26,26 +26,32 @@ export function Leaderboard(props: LeaderboardProps) {
 
         const rankings: {[key: string]: number} = {};
         players.forEach(p => {
-            rankings[p.id] = 
+            const r = 
                 (0.6 * ((p.wins ?? 0) + (0.5 * (p.ties ?? 0))) / totalMatches) + 
                 (0.3 * (p.points ?? 0) / totalMatches) + 
                 (0.1 * (p.matches ?? 0) / totalMatches);
+
+            rankings[p.id] = isNaN(r) ? 0 : r;
         });        
 
         const positions: {[key: string]: number} = {};
         const sortedPlayers = players.sort((a, b) => rankings[a.id] < rankings[b.id] ? 1 : -1);        
-        let pos = 1;
+        let pos = 0;
         for (let i = 0; i < sortedPlayers.length; i++)
         {
             const currentPlayer = sortedPlayers[i];
+            const currentRanking = rankings[currentPlayer.id];
+
             if (i === 0) {
-                positions[currentPlayer.id] = pos;
+                positions[currentPlayer.id] = currentRanking === 0 ? Infinity : ++pos;
             } else {
                 const prevPlayer = sortedPlayers[i - 1];
-                if (rankings[currentPlayer.id] === rankings[prevPlayer.id]) {
-                    positions[currentPlayer.id] = pos;
+                const prevRanking = rankings[prevPlayer.id];
+
+                if (currentRanking === prevRanking) {
+                    positions[currentPlayer.id] = positions[prevPlayer.id];
                 } else {
-                    positions[currentPlayer.id] = ++pos;
+                    positions[currentPlayer.id] = currentRanking === 0 ? Infinity : ++pos;
                 }                
             }
         }
@@ -89,7 +95,7 @@ export function Leaderboard(props: LeaderboardProps) {
                     .map((p, i) => 
                         <Row key={p.id} className="fade-in">                            
                             <RowBody>                        
-                                <Column>{getRanking(p)}</Column>
+                                <Column>{isFinite(getRanking(p)) ? getRanking(p) : '--'}</Column>
                                 <Column>{p.name}</Column>                
                                 <Column>{p.wins ?? 0}</Column>                                    
                                 <Column>{p.loses ?? 0}</Column>                                    
