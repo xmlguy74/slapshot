@@ -33,7 +33,7 @@ broker.on("message", async (topic, message) => {
         const cmd = JSON.parse(message.toString()) as MQTTCommand;
         switch (cmd?.command) {
             case 'new':
-                await newGame();
+                await newGame(cmd.time);
                 break;
             case "tapin":
                 await tapIn(cmd.team, cmd.player);
@@ -78,13 +78,13 @@ async function off() {
     }
 }
 
-async function newGame() {
+async function newGame(time?: number) {
     try {
         const game: Game = {
             state: 'pending',
             homeScore: 0,
             visitorScore: 0,
-            timeRemaining: GAME_TIME
+            timeRemaining: time ?? GAME_TIME
         }
         await games.put('current', game, null);
         fireEvent("newgame", game);
