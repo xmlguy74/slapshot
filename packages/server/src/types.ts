@@ -16,6 +16,8 @@ export type Player = {
     matches?: number,
     points?: number,
     wins?: number,
+    loses?: number,
+    ties?: number,
 }
 
 export type GameUpdate = {

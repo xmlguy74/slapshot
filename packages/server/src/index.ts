@@ -3,10 +3,13 @@ import { Level } from 'level';
 import WebSocket from 'ws';
 import { WSCommand, Game, GameUpdate, WSMessage, Player, ResultMessage, MQTTCommand } from './types';
 import * as mqtt from 'mqtt';
+import crypto from 'crypto';
 
 const PORT = 3001;
 const GAME_TIME = 600000; /* 10 min */
 const MQTT_BROKER = "mqtt://192.168.15.50";
+
+const signature = crypto.randomBytes(16).toString('hex');
 
 const db = new Level('db', { valueEncoding: 'json' });
 const players = db.sublevel('players', { valueEncoding: 'json' });
@@ -215,18 +218,20 @@ async function endGame() {
         const home = await getPlayer(game.home);
         const visitor = await getPlayer(game.visitor);
 
-        if (home) {
+        if (home && visitor) {
             home.matches += 1;
             home.points += game.homeScore;
-            home.wins += (game.homeScore > game.visitorScore ? 1 : 0);
+            home.wins += (game.homeScore > game.visitorScore) ? 1 : 0;
+            home.loses += (game.homeScore < game.visitorScore) ? 1 : 0;
+            home.ties += (game.homeScore == game.visitorScore) ? 1 : 0;
             await players.put(home.id, home, null);
             fireEvent("stats", home);
-        }
 
-        if (visitor) {
             visitor.matches += 1;
-            visitor.points += game.homeScore;
-            visitor.wins += (game.homeScore < game.visitorScore ? 1 : 0);
+            visitor.points += game.visitorScore;
+            visitor.wins += (game.homeScore < game.visitorScore) ? 1 : 0;
+            visitor.loses += (game.homeScore > game.visitorScore) ? 1 : 0;
+            visitor.ties += (game.homeScore == game.visitorScore) ? 1 : 0;
             await players.put(visitor.id, visitor, null);
             fireEvent("stats", visitor);
         }
@@ -256,7 +261,9 @@ app.get('/api/players', async (req, res) => {
 
 app.post('/api/players', async (req, res) => {
     try {
-        const player = req.body as Player;
+        const added = req.body as Player;
+        const existing = await getPlayer(added.id);
+        const player = {...existing, ...added};
         await players.put(player.id, player, null);
         fireEvent("newplayer", player);
         res.sendStatus(200);
@@ -281,6 +288,21 @@ app.delete('/api/players/:id', async (req, res) => {
     try {
         await players.del(req.params.id);
         fireEvent("removeplayer", {id: req.params.id});
+        res.sendStatus(200);
+    } catch (e) {
+        console.error(e);
+        res.status(500).send(e);
+    }
+});
+
+app.put('/api/players/:id', async (req, res) => {
+    try {
+        const player = await getPlayer(req.params.id);
+        player.matches = req.body.matches ?? player.matches;
+        player.wins = req.body.wins ?? player.wins;
+        player.points = req.body.points ?? req.body.points;
+        await players.put(player.id, player, null);
+        fireEvent("stats", player);
         res.sendStatus(200);
     } catch (e) {
         console.error(e);
@@ -353,7 +375,7 @@ server.on("upgrade", (req, socket, head) => {
 });
 
 wss.on("connection", (websocketConnection) => {
-    websocketConnection.send(JSON.stringify({type: "connect"}));
+    websocketConnection.send(JSON.stringify({type: "connect", signature: signature}));
     console.log('connected!');
 
     websocketConnection.on("message", async (data) => {

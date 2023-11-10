@@ -65,7 +65,6 @@ function App(props: AppProps) {
       </HeaderSection>    
 
       <BodySection>        
-        <BodyTitle className="Title">Leaderboard</BodyTitle>
         <Leaderboard></Leaderboard>
       </BodySection>
       

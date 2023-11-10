@@ -85,6 +85,7 @@ export function useSlapshot(hostname: string): Slapshot {
     const [callbacks] = useState<Map<number, SendCallback>>(new Map<number, SendCallback>());
     const [handlers] = useState<Map<string, EventHandler>>(new Map<string, EventHandler>());
     const [ready, setReady] = useState<boolean>();
+    const [signature, setSignature] = useState<string>(null);
 
     const readyRef = useRef<boolean>();
     readyRef.current = ready;
@@ -94,6 +95,9 @@ export function useSlapshot(hostname: string): Slapshot {
 
     const handlerRef = useRef<Map<string, EventHandler>>();
     handlerRef.current = handlers;
+
+    const signatureRef = useRef<string>();
+    signatureRef.current = signature;
 
     const { sendMessage, lastMessage, readyState } = useWebSocket('ws://' + hostname + "/websockets", {
         retryOnError: false,
@@ -133,7 +137,12 @@ export function useSlapshot(hostname: string): Slapshot {
             switch (data?.type) {
                 case 'connect':
                     console.log('Connected!');
-                    setReady(true);
+                    if (!signature || signature === data.signature) {
+                        setSignature(data.signature);
+                        setReady(true);
+                    } else {
+                        window.location.reload();
+                    }
                     break;
                 case 'event': {
                     const m = data as EventMessage;
@@ -159,7 +168,7 @@ export function useSlapshot(hostname: string): Slapshot {
         if (lastMessage) {
             processMessage(lastMessage);
         }
-    }, [sendMessage, lastMessage]);
+    }, [sendMessage, lastMessage, signature]);
     
     const send = useCallback(<TCommand extends Command>(command: TCommand, callback?: SendCallback) => {
         if (callback && command.id) {            
