@@ -7,7 +7,7 @@ interface SlapshotContextType {
     ss: Slapshot,
     players: Player[],
     currentGame?: Game,
-    goal: boolean,
+    goal: number,
     message?: {
         error: boolean,
         text: string,
@@ -19,7 +19,7 @@ export const SlapshotContext = React.createContext<SlapshotContextType>(
     ss: null,
     players: [],
     currentGame: null,
-    goal: false,
+    goal: 0,
     message: null,
   }
 )

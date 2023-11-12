@@ -105,7 +105,7 @@ function App(props: AppProps) {
         limit={3}
         theme='colored' />
 
-      <Goal text={goal && "GOAL!"}/>
+      <Goal text={goal > 0 && "GOAL!"}/>
     
     </AppSection>
   );

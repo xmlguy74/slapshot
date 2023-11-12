@@ -6,7 +6,7 @@ import useSound from 'use-sound';
 export interface GameCache {
     players: Player[],
     currentGame?: Game,
-    goal: boolean,
+    goal: number,
     message?: {
         error: boolean,
         text: string,
@@ -23,7 +23,7 @@ export function useGameCache(ss: Slapshot): GameCache {
     const currentGameRef = useRef<Game>();
     currentGameRef.current = currentGame;
 
-    const [goal, setGoal] = useState<boolean>(false);
+    const [goal, setGoal] = useState<number>(0);
     const goalRef = useRef(goal);
     goalRef.current = goal;
 
@@ -142,9 +142,9 @@ export function useGameCache(ss: Slapshot): GameCache {
                 setCurrentGame(event.event.data);
                 stopAllSounds();
                 cheerSound();
-                setGoal(true);
+                setGoal(goalRef.current+1);
                 setTimeout(() => {
-                    setGoal(false);
+                    setGoal(goalRef.current-1);
                 }, 4000);
             });
 

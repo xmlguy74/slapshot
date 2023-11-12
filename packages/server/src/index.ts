@@ -39,25 +39,25 @@ broker.on("message", async (topic, message) => {
                 await tapIn(cmd.team, cmd.player);
                 break;
             case 'start':
-                await startGame();
+                await startGame(cmd.timeRemaining);
                 break;
             case "restart":
-                await restartGame(cmd.time);
+                await restartGame(cmd.timeRemaining);
                 break;
             case "score":
-                await score(cmd.team);
+                await score(cmd.team, cmd.homeScore, cmd.visitorScore);
                 break;
             case "abort":
                 await abortGame();
                 break;
             case "update":
-                await updateGame(cmd.timeRemaining);
+                await updateGame(cmd.timeRemaining, cmd.homeScore, cmd.visitorScore);
                 break;
             case "end":
-                await endGame();
+                await endGame(cmd.homeScore, cmd.visitorScore);
                 break;
             case "pause":
-                await pauseGame();
+                await pauseGame(cmd.timeRemaining, cmd.homeScore, cmd.visitorScore);
                 break;            
             case "off":
                 await off();
@@ -115,11 +115,12 @@ async function tapIn(team: 'home'|'visitor', player: string) {
     }
 }
 
-async function startGame() {
+async function startGame(timeRemaining: number) {
     try {
         const game = await getGame('current');
         if (!!game && (game.state === 'pending' || game.state === 'paused')) {
             game.state = 'active';
+            game.timeRemaining = timeRemaining;
             await games.put('current', game, null);
             fireEvent("startgame", game);
         } else {
@@ -130,11 +131,14 @@ async function startGame() {
     }
 }
 
-async function pauseGame() {
+async function pauseGame(timeRemaining: number, homeScore: number, visitorScore: number) {
     try {
         const game = await getGame('current');
         if (isActiveGame(game)) {
             game.state = 'paused';
+            game.timeRemaining = timeRemaining;
+            game.homeScore = homeScore;
+            game.visitorScore = visitorScore;
             await games.put('current', game, null);
             fireEvent("pausegame", game);
         } else {
@@ -178,15 +182,12 @@ async function abortGame() {
     }
 }
 
-async function score(team: 'home'|'visitor') {
+async function score(team: 'home'|'visitor', homeScore: number, visitorScore: number) {
     try {
         const game = await getGame('current');
         if (game?.state == 'active') {
-            if (team === 'home') {
-                game.homeScore++;
-            } else if (team === 'visitor') {
-                game.visitorScore++;
-            }
+            game.homeScore = homeScore;
+            game.visitorScore = visitorScore;
             await games.put('current', game, null);
             fireEvent("score", game);
         } else {
@@ -197,11 +198,13 @@ async function score(team: 'home'|'visitor') {
     }
 }
 
-async function updateGame(timeRemaining: number) {
+async function updateGame(timeRemaining: number, homeScore: number, visitorScore: number) {
     try {
         const game = await getGame('current');
         if (isActiveGame(game)) {
             game.timeRemaining = timeRemaining;
+            game.homeScore = homeScore;
+            game.visitorScore = visitorScore;
             await games.put('current', game, null);
             fireEvent("updategame", game);
         } else {
@@ -212,9 +215,12 @@ async function updateGame(timeRemaining: number) {
     }
 }
 
-async function endGame() {
+async function endGame(homeScore: number, visitorScore: number) {
     try {
         const game = await getGame('current');
+        game.homeScore = homeScore;
+        game.visitorScore = visitorScore;
+
         const home = await getPlayer(game.home);
         const visitor = await getPlayer(game.visitor);
 
