@@ -93,7 +93,10 @@ export function Leaderboard(props: LeaderboardProps) {
 
             {
                 players
-                    .sort((a, b) => getRanking(a) > getRanking(b) ? 1 : -1)
+                    .sort((a, b) => 
+                        (rankings[a.id] > rankings[b.id]) ? 1 : 
+                        (rankings[a.id] < rankings[b.id]) ? -1 :
+                        a.name.localeCompare(b.name))
                     .slice((currentPage - 1) * PAGE_SIZE, ((currentPage - 1) * PAGE_SIZE) + PAGE_SIZE)
                     .map((p, i) => 
                         <Row key={p.id} className="fade-in">
