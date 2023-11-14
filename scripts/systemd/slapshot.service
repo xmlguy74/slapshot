@@ -1,0 +1,15 @@
+[Unit]
+Description=Slapshot
+
+[Service]
+Type=simple
+WorkingDirectory=/home/orangepi/slapshot/packages/server
+ExecStart=yarn start
+Restart=always
+RestartSec=10
+StandardOutput=syslog
+StandardError=syslog
+
+[Install]
+WantedBy=multi-user.target
+
