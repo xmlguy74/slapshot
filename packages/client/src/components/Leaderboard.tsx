@@ -35,7 +35,10 @@ export function Leaderboard(props: LeaderboardProps) {
         });        
 
         const positions: {[key: string]: number} = {};
-        const sortedPlayers = players.sort((a, b) => rankings[a.id] < rankings[b.id] ? 1 : -1);        
+        const sortedPlayers = players.sort((a, b) => 
+            (rankings[a.id] < rankings[b.id]) ? 1 : 
+            (rankings[a.id] > rankings[b.id]) ? -1 :
+            a.name.localeCompare(b.name));
         let pos = 0;
         for (let i = 0; i < sortedPlayers.length; i++)
         {
