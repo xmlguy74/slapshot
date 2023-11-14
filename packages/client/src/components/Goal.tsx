@@ -13,9 +13,9 @@ export function Goal(props: GoalProps) {
             {props.text &&
                 <Container>
                     {props.text}
-                    {/* <div className="firework" />
                     <div className="firework" />
-                    <div className="firework" /> */}
+                    <div className="firework" />
+                    <div className="firework" />
                 </Container>
             }
         </>
