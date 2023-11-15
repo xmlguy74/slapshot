@@ -3,7 +3,7 @@ Description=Slapshot
 
 [Service]
 Type=simple
-WorkingDirectory=/home/orangepi/slapshot/packages/server
+WorkingDirectory=/home/john/slapshot/packages/server
 ExecStart=yarn start
 Restart=always
 RestartSec=10

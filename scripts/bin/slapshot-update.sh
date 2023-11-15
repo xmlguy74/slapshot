@@ -2,7 +2,7 @@
 
 systemctl stop slapshot
 
-cd /home/orangepi/slapshot
+cd /home/john/slapshot
 git pull
 yarn
 yarn build
