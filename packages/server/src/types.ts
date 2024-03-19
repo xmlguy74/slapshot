@@ -25,7 +25,7 @@ export type GameUpdate = {
 }
 
 export interface MQTTCommand {
-    command: 'new'|'tapin'|'start'|'restart'|'abort'|'score'|'update'|'end'|'pause'|'off',
+    command: 'new'|'tapin'|'start'|'restart'|'abort'|'score'|'update'|'end'|'pause'|'off'|'reboot',
     [key: string]: any,
 }
 

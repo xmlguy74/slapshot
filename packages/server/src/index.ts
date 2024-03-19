@@ -4,6 +4,7 @@ import WebSocket from 'ws';
 import { WSCommand, Game, GameUpdate, WSMessage, Player, ResultMessage, MQTTCommand } from './types';
 import * as mqtt from 'mqtt';
 import crypto from 'crypto';
+import child_process from 'child_process';
 
 const PORT = 3001;
 const GAME_TIME = 600000; /* 10 min */
@@ -62,12 +63,23 @@ broker.on("message", async (topic, message) => {
             case "off":
                 await off();
                 break;
+            case "reboot":
+                await reboot();
+                break;
             default:
                 console.warn("Unhandled command:" + cmd?.command);
                 break;
         }
     }
 });
+
+async function reboot() {
+    try {
+        child_process.exec('sudo /sbin/shutdown -r now', (msg) => { console.log(msg)});
+    } catch (e) {
+        console.error(e);
+    }
+}
 
 async function off() {
     try {
