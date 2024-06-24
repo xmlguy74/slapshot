@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useState } from 'react';
-import { AppSection, BodySection, BodyTitle, HeaderSection, StatusbarSection, TaskbarSection } from './App.styled';
+import { AppSection, BodySection, HeaderSection, StatusbarSection, TaskbarSection } from './App.styled';
 import { DateTime, DateTimeMode } from './components/DateTime';
 import { ToastContainer, toast } from 'react-toastify';
 
@@ -9,7 +9,7 @@ import { Player, PlayerMode } from './components/Player';
 import { SlapshotContext } from './contexts/SlapshotContext';
 
 import formatDuration from 'format-duration';
-import { Game } from './types';
+import { Game, STATE_GAMEOVER, STATE_OFF, STATE_PLAYING, STATE_TAPIN, STATE_TIMEOUT } from './types';
 import { Goal } from './components/Goal';
 
 export interface AppProps {
@@ -18,15 +18,25 @@ export interface AppProps {
 
 function getPlayerName(game: Game, mode: PlayerMode): string {
   switch (game.state) {
-    case 'pending':
-      return (mode === PlayerMode.Home ? game.homeName : game.visitorName) ?? "Tap In!"
+    case STATE_TAPIN:
+      return (mode === PlayerMode.Home ? formatName(game.home.name) : formatName(game.visitor.name)) ?? "Tap In!"
     
-    case 'complete':
-    case 'active':
-    case 'abort':
-    case 'paused':
-      return (mode === PlayerMode.Home ? game.homeName : game.visitorName) ?? (mode === PlayerMode.Home ? "Home" : "Visitor");
+    case STATE_GAMEOVER:
+    case STATE_PLAYING:
+    case STATE_TIMEOUT:
+      return (mode === PlayerMode.Home ? formatName(game.home.name) : formatName(game.visitor.name)) ?? (mode === PlayerMode.Home ? "Home" : "Visitor");
   }
+}
+
+function formatName(name: string): string {
+  if (name && name.length > 0) {
+    return name;
+  }
+  return null;
+}
+
+function formatTime(seconds: number): string {
+  return formatDuration(seconds * 1000);
 }
 
 function App(props: AppProps) {
@@ -69,29 +79,29 @@ function App(props: AppProps) {
       </BodySection>
       
       <StatusbarSection className="Statusbar">
-        { currentGame && <>
-          <Player mode={PlayerMode.Home} className={currentGame.state === 'pending' && !currentGame.home && "PendingPlayer"} name={getPlayerName(currentGame, PlayerMode.Home)} score={currentGame.homeScore}></Player>
+        { currentGame.state !== STATE_OFF && <>
+          <Player mode={PlayerMode.Home} className={currentGame.state === STATE_TAPIN && !currentGame.home.name && "PendingPlayer"} name={getPlayerName(currentGame, PlayerMode.Home)} score={currentGame.home.score}></Player>
           
-          { currentGame.state === 'pending' && <span className="PressStart">PRESS START</span> }
+          { currentGame.state === STATE_TAPIN && <span className="PressStart">PRESS START</span> }
           
-          { currentGame.state === 'active' && <span className="PlayClock" data-low={(currentGame?.timeRemaining ?? 0) < 15000 ? true : false}>{formatDuration(currentGame?.timeRemaining ?? 0) }</span> }
+          { currentGame.state === STATE_PLAYING && <span className="PlayClock" data-low={(currentGame?.timeRemaining ?? 0) < 15 ? true : false}>{formatTime(currentGame?.timeRemaining ?? 0) }</span> }
           
-          { currentGame.state === 'paused' && 
+          { currentGame.state === STATE_TIMEOUT && 
           <div>
-            <div className="PlayClock PlayClock--paused" data-low={(currentGame?.timeRemaining ?? 0) < 15000 ? true : false}>{formatDuration(currentGame?.timeRemaining ?? 0) }</div>
+            <div className="PlayClock PlayClock--paused" data-low={(currentGame?.timeRemaining ?? 0) < 15000 ? true : false}>{formatTime(currentGame?.timeRemaining ?? 0) }</div>
             TIMEOUT
           </div>
           }
           
-          { currentGame.state === 'complete' && "GAME OVER" }
+          { currentGame.state === STATE_GAMEOVER && "GAME OVER" }
           
-          { currentGame.state === 'abort' && "GAME CANCELED" }
+          {/* { currentGame.state === 'abort' && "GAME CANCELED" } */}
         
-          <Player mode={PlayerMode.Visitor} className={currentGame.state === 'pending' && !currentGame.visitor && "PendingPlayer"} name={getPlayerName(currentGame, PlayerMode.Visitor)} score={currentGame.visitorScore}></Player>
+          <Player mode={PlayerMode.Visitor} className={currentGame.state === STATE_TAPIN && !currentGame.visitor.name && "PendingPlayer"} name={getPlayerName(currentGame, PlayerMode.Visitor)} score={currentGame.visitor.score}></Player>
         
         </>}
 
-        { !currentGame && <>
+        { currentGame.state === STATE_OFF && <>
           SYSTEM OFF
         </>}
       </StatusbarSection>

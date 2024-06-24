@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { GetCurrentGameCommand, GetCurrentGameMessage, GetPlayersCommand, GetPlayersMessage, Message, Slapshot } from "./useSlapshot";
-import { Game, Player } from "../types";
+import { DefaultGame, Game, Notify, Player, STATE_TIMEOUT } from "../types";
 import useSound from 'use-sound';
 
 export interface GameCache {
     players: Player[],
-    currentGame?: Game,
+    currentGame: Game,
     goal: number,
     message?: {
         error: boolean,
@@ -19,7 +19,7 @@ export function useGameCache(ss: Slapshot): GameCache {
     const playersRef = useRef<Player[]>();
     playersRef.current = players;
 
-    const [currentGame, setCurrentGame] = useState<Game>();    
+    const [currentGame, setCurrentGame] = useState<Game>(DefaultGame);    
     const currentGameRef = useRef<Game>();
     currentGameRef.current = currentGame;
 
@@ -70,6 +70,11 @@ export function useGameCache(ss: Slapshot): GameCache {
                 }
             });
 
+            ssRef.current.on<Notify>("notify", (event) => {
+                console.log("Notify!");
+                setMessage({ error: event.event.data.error, text: event.event.data.text});
+            });
+
             ssRef.current.on<Game>("newgame", (event) => {
                 console.log("New game!");
                 setCurrentGame(event.event.data);
@@ -86,7 +91,7 @@ export function useGameCache(ss: Slapshot): GameCache {
 
             ssRef.current.on<Game>("startgame", (event) => {
                 console.log("Start game!");
-                const wasPaused = currentGameRef.current?.state === 'paused';
+                const wasPaused = currentGameRef.current?.state === STATE_TIMEOUT;
                 setCurrentGame(event.event.data);
                 
                 stopAllSounds();
@@ -132,6 +137,13 @@ export function useGameCache(ss: Slapshot): GameCache {
 
             ssRef.current.on<Game>("pausegame", (event) => {
                 console.log("Game Paused!");
+                setCurrentGame(event.event.data);
+                stopAllSounds();
+                whistleSound();
+            });
+
+            ssRef.current.on<Game>("resumegame", (event) => {
+                console.log("Game Resumed!");
                 setCurrentGame(event.event.data);
                 stopAllSounds();
                 whistleSound();

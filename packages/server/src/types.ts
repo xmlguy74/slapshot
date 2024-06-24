@@ -1,12 +1,15 @@
+export type Manager = {
+    player: string,
+    name: string,
+    score: number,
+    status: string,
+}
+
 export type Game = {
-    state: 'pending'|'active'|'complete'|'abort'|'paused',
-    home?: string,
-    homeName?: string,
-    homeScore: number,
-    visitor?: string,
-    visitorName?: string,
-    visitorScore: number,
-    timeRemaining?: number,
+    state: number,
+    timeRemaining: number,
+    home: Manager,
+    visitor: Manager,
 }
 
 export type Player = {
