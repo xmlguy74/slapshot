@@ -70,6 +70,8 @@ async function off() {
 
 async function newGame() {
     try {
+        current.home.name = '';
+        current.visitor.name = '';
         fireEvent("newgame", current);
     } catch (e) {
         console.error(e);
@@ -132,9 +134,17 @@ async function abortGame() {
     }
 }
 
-async function goal() {
+async function setGoal() {
     try {
-        fireEvent("score", current);
+        fireEvent("setgoal", current);
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+async function clearGoal() {
+    try {
+        fireEvent("cleargoal", current);
     } catch (e) {
         console.error(e);
     }
@@ -423,6 +433,8 @@ async function connectBluetooth() {
                         startGame();
                     } else if (oldState == STATE_TIMEOUT) { 
                         resumeGame();
+                    } else if (oldState == STATE_GOAL) {
+                        clearGoal();
                     }
                     break;
     
@@ -430,6 +442,10 @@ async function connectBluetooth() {
                     pauseGame();
                     break;
     
+                case STATE_GOAL:
+                    setGoal();
+                    break;
+
                 case STATE_GAMEOVER:
                     endGame();
                     break;
@@ -457,6 +473,7 @@ async function connectBluetooth() {
         homePlayer.on('valuechanged', buffer => {
             const state = buffer.toString('utf-8');
             current.home.player = state;
+            current.home.name = '';
             console.log("Home Player: " + state);
 
             tapIn('home', current.home.player);
@@ -467,10 +484,6 @@ async function connectBluetooth() {
             const state = buffer.readFloatLE();
             current.home.score = state;
             console.log("Home Score: " + state);
-
-            if (current.state === STATE_PLAYING) {
-                goal();
-            }
         });      
 
         await homeStatus.startNotifications();
@@ -491,6 +504,7 @@ async function connectBluetooth() {
         visitorPlayer.on('valuechanged', buffer => {
             const state = buffer.toString('utf-8');
             current.visitor.player = state;
+            current.visitor.name = '';
             console.log("Visitor Player: " + state);
 
             tapIn('visitor', current.visitor.player);
@@ -501,10 +515,6 @@ async function connectBluetooth() {
             const state = buffer.readFloatLE();
             current.visitor.score = state;
             console.log("Visitor Score: " + state);
-
-            if (current.state === STATE_PLAYING) {
-                goal();
-            }
         });     
 
         await visitorStatus.startNotifications();

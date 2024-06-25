@@ -6,7 +6,7 @@ import useSound from 'use-sound';
 export interface GameCache {
     players: Player[],
     currentGame: Game,
-    goal: number,
+    goal: boolean,
     message?: {
         error: boolean,
         text: string,
@@ -23,7 +23,7 @@ export function useGameCache(ss: Slapshot): GameCache {
     const currentGameRef = useRef<Game>();
     currentGameRef.current = currentGame;
 
-    const [goal, setGoal] = useState<number>(0);
+    const [goal, setGoal] = useState<boolean>(false);
     const goalRef = useRef(goal);
     goalRef.current = goal;
 
@@ -149,15 +149,19 @@ export function useGameCache(ss: Slapshot): GameCache {
                 whistleSound();
             });
 
-            ssRef.current.on<Game>("score", (event) => {
-                console.log("Score!");
+            ssRef.current.on<Game>("setgoal", (event) => {
+                console.log("Set Goal!");
                 setCurrentGame(event.event.data);
                 stopAllSounds();
                 cheerSound();
-                setGoal(goalRef.current+1);
-                setTimeout(() => {
-                    setGoal(goalRef.current-1);
-                }, 4000);
+                setGoal(true);
+            });
+
+            ssRef.current.on<Game>("cleargoal", (event) => {
+                console.log("Set Goal!");
+                setCurrentGame(event.event.data);
+                stopAllSounds();
+                setGoal(false);
             });
 
             ssRef.current.on<Player>("stats", (event) => {
@@ -183,7 +187,7 @@ export function useGameCache(ss: Slapshot): GameCache {
             });
 
             ssRef.current.on("off", (event) => {
-                setCurrentGame(null);
+                setCurrentGame(DefaultGame);
                 stopAllSounds();
             });
         }        
