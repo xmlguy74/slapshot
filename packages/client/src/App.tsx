@@ -9,7 +9,7 @@ import { Player, PlayerMode } from './components/Player';
 import { SlapshotContext } from './contexts/SlapshotContext';
 
 import formatDuration from 'format-duration';
-import { Game, STATE_GAMEOVER, STATE_OFF, STATE_PLAYING, STATE_TAPIN, STATE_TIMEOUT } from './types';
+import { Game, STATE_GAMEOVER, STATE_GOAL, STATE_OFF, STATE_PLAYING, STATE_TAPIN, STATE_TIMEOUT } from './types';
 import { Goal } from './components/Goal';
 
 export interface AppProps {
@@ -23,6 +23,7 @@ function getPlayerName(game: Game, mode: PlayerMode): string {
     
     case STATE_GAMEOVER:
     case STATE_PLAYING:
+    case STATE_GOAL:
     case STATE_TIMEOUT:
       return (mode === PlayerMode.Home ? formatName(game.home.name) : formatName(game.visitor.name)) ?? (mode === PlayerMode.Home ? "Home" : "Visitor");
   }
@@ -93,7 +94,7 @@ function App(props: AppProps) {
           
           { currentGame.state === STATE_TAPIN && <span className="PressStart">PRESS START</span> }
           
-          { currentGame.state === STATE_PLAYING && <span className="PlayClock" data-low={(currentGame?.timeRemaining ?? 0) < 15 ? true : false}>{formatTime(currentGame?.timeRemaining ?? 0) }</span> }
+          { (currentGame.state === STATE_PLAYING || currentGame.state === STATE_GOAL) && <span className="PlayClock" data-low={(currentGame?.timeRemaining ?? 0) < 15 ? true : false}>{formatTime(currentGame?.timeRemaining ?? 0) }</span> }
           
           { currentGame.state === STATE_TIMEOUT && 
           <div>
