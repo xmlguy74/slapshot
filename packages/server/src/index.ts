@@ -563,15 +563,17 @@ async function main() {
 
     setTimeout(healthCheck, 10000);
 
-    process.on('SIGINT', function() {
+    const shutdown = () => {
         console.log("Caught interrupt signal");
-    
+
         if (destroy) {
             destroy();
         }
-        process.exit();
-    
-    });    
+        process.exit();    
+    };
+
+    process.on('SIGINT', shutdown);
+    process.on('SIGTERM', shutdown);
 
     const server = app.listen(PORT, () => {
         console.log(`[server]: Server is running at http://localhost:${PORT}`);
