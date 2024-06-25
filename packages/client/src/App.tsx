@@ -79,7 +79,7 @@ function App(props: AppProps) {
       </BodySection>
       
       <StatusbarSection className="Statusbar">
-        { currentGame.state !== STATE_OFF && <>
+        { currentGame && currentGame.state !== STATE_OFF && <>
           <Player mode={PlayerMode.Home} className={currentGame.state === STATE_TAPIN && !currentGame.home.name && "PendingPlayer"} name={getPlayerName(currentGame, PlayerMode.Home)} score={currentGame.home.score}></Player>
           
           { currentGame.state === STATE_TAPIN && <span className="PressStart">PRESS START</span> }
@@ -101,7 +101,7 @@ function App(props: AppProps) {
         
         </>}
 
-        { currentGame.state === STATE_OFF && <>
+        { currentGame && currentGame.state === STATE_OFF && <>
           SYSTEM OFF
         </>}
       </StatusbarSection>
