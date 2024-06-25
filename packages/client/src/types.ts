@@ -24,6 +24,9 @@ export type Game = {
     timeRemaining: number,
     home: Manager,
     visitor: Manager,
+    issues: {
+        [id: string]: string,
+    }
 }
 
 export type Player = {
@@ -51,5 +54,6 @@ export const DefaultGame = {
         name: "",
         score: 0,
         status: "",
-    }
+    },
+    issues: {},
 };

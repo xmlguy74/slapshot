@@ -10,6 +10,9 @@ export type Game = {
     timeRemaining: number,
     home: Manager,
     visitor: Manager,
+    issues: {
+        [id: string]: string
+    },
 }
 
 export type Player = {

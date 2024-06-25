@@ -18,6 +18,10 @@ const STATE_1UP           = 54;
 const STATE_NOGOAL        = 55;
 const STATE_GAMEOVER      = 56;
 
+const ISSUE_LOST_CONTROLLER = "ISSUE_LOST_CONTROLLER";
+const ISSUE_LOST_HOME_SENSOR = "ISSUE_LOST_HOME_SENSOR";
+const ISSUE_LOST_VISITOR_SENSOR = "ISSUE_LOST_VISITOR_SENSOR";
+
 const signature = crypto.randomBytes(16).toString('hex');
 
 const db = new Level('db', { valueEncoding: 'json' });
@@ -38,7 +42,8 @@ const current: Game = {
         name: '',
         score: 0,
         status: ''
-    }
+    },
+    issues: {},
 }
 
 async function reboot() {
@@ -47,6 +52,16 @@ async function reboot() {
     } catch (e) {
         console.error(e);
     }
+}
+
+async function setIssue(id: string, text: string) {
+    current.issues[id] = text;
+    await updateGame();
+}
+
+async function clearIssue(id: string) {
+    current.issues[id] = undefined;
+    await updateGame();
 }
 
 async function notify(error: boolean, text: string) {
@@ -494,9 +509,9 @@ async function connectBluetooth() {
             console.log("Home Status: " + state);
             
             if (state === "Error" && oldState === "OK") {
-                notify(true, "Lost connection with home sensor!");
+                setIssue(ISSUE_LOST_HOME_SENSOR, "Lost connection with home sensor.");
             } else if (state === "OK" && oldState === "Error") {
-                notify(false, "Connection restored with home sensor!");
+                clearIssue(ISSUE_LOST_HOME_SENSOR);
             }
         });
 
@@ -525,9 +540,9 @@ async function connectBluetooth() {
             console.log("Visitor Status: " + state);
 
             if (state === "Error" && oldState === "OK") {
-                notify(true, "Lost connection with visitor sensor!");
+                setIssue(ISSUE_LOST_VISITOR_SENSOR, "Lost connection with visitor sensor.");                
             } else if (state === "OK" && oldState === "Error") {
-                notify(false, "Connection restored with visitor sensor!");
+                clearIssue(ISSUE_LOST_VISITOR_SENSOR);                
             }
         });
 
@@ -548,7 +563,7 @@ async function main() {
         //check health
         if (controller) {
             if (!await controller.isConnected()) {
-                notify(true, "Controller connection lost.")
+                setIssue(ISSUE_LOST_CONTROLLER, "Lost connection with controller.")
                 destroy();
                 controller = undefined;
                 destroy = undefined;
@@ -562,9 +577,9 @@ async function main() {
                 const data = await connectBluetooth();
                 controller = data.device;
                 destroy = data.destroy;
-                notify(false, "Connected to controller.");
+                clearIssue(ISSUE_LOST_CONTROLLER);
             } catch (e) {
-                notify(true, "Failed to connect to controller.");
+                setIssue(ISSUE_LOST_CONTROLLER, "Failed to connect to controller.");
             }
         }
 

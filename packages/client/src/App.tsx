@@ -63,6 +63,15 @@ function App(props: AppProps) {
     }
   }, [message]);
 
+  useEffect(() => {
+    toast.clearWaitingQueue();
+    toast.dismiss();
+  const issues = currentGame.issues;
+    Object.getOwnPropertyNames(issues).forEach((key) => {
+      toast(issues[key], { type: 'error', autoClose: false });
+    });
+  }, [currentGame.issues]);
+
   return (
     <AppSection className="App">
 
