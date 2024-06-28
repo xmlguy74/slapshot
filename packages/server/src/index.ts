@@ -32,6 +32,7 @@ const games = db.sublevel('games', { valueEncoding: 'json' });
 const current: Game = {
     state: STATE_OFF,
     timeRemaining: 0,
+    muteSound: false,
     home: {
         player: '',
         name: '',
@@ -407,6 +408,7 @@ async function connectBluetooth() {
         //(await gameService.characteristics()).forEach(c => console.log(c));        
         const gameState = await gameService.getCharacteristic('53d0f4b3-c05f-4ff0-bfd4-2097f76bee6a')
         const timeRemaining = await gameService.getCharacteristic('63427eed-5a3c-4ef3-a9f6-cea59992c584')
+        const muteSound = await gameService.getCharacteristic('a2b96b99-6298-46f7-a5b6-dea7652380f0')
 
         const homeService = await gattServer.getPrimaryService('0c88f0aa-6831-4ffa-8684-308e3c476a39');
         //(await homeService.characteristics()).forEach(c => console.log(c));
@@ -423,12 +425,15 @@ async function connectBluetooth() {
         //read current state
         current.state = (await gameState.readValue()).readFloatLE();
         current.timeRemaining = (await timeRemaining.readValue()).readFloatLE();
+        current.muteSound = (await muteSound.readValue())[0] == 1;
         current.home.player = (await homePlayer.readValue()).toString('utf-8');
         current.home.score = (await homeScore.readValue()).readFloatLE();
         current.home.status = (await homeStatus.readValue()).toString('utf-8');
         current.visitor.player = (await visitorPlayer.readValue()).toString('utf-8');
         current.visitor.score = (await visitorScore.readValue()).readFloatLE();
         current.visitor.status = (await visitorStatus.readValue()).toString('utf-8');
+
+        console.info ("Current game:", current);
 
         updateGame();
 
@@ -483,6 +488,15 @@ async function connectBluetooth() {
             const state = buffer.readFloatLE();
             current.timeRemaining = state;
             console.log("Time Remaining: " + state);
+            
+            updateGame();
+        });      
+
+        await muteSound.startNotifications()
+        timeRemaining.on('valuechanged', buffer => {
+            const state = buffer[0] == 1;
+            current.muteSound = state;
+            console.log("Mute Sound: " + state);
             
             updateGame();
         });      
@@ -550,6 +564,7 @@ async function connectBluetooth() {
         });
 
     } catch (e) {        
+        console.error(e);
         destroy();
         throw e;
     }    
