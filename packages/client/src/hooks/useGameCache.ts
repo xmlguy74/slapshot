@@ -137,7 +137,11 @@ export function useGameCache(ss: Slapshot): GameCache {
 
             ssRef.current.on<Game>("updategame", (event) => {
                 console.log("Game Update!");
+                const hadSound = !currentGameRef.current.muteSound;
                 setCurrentGame(event.event.data);
+                if (hadSound && currentGameRef.current.muteSound) {
+                    stopAllSounds();
+                }
             });
 
             ssRef.current.on<Game>("abortgame", (event) => {

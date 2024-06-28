@@ -1,5 +1,6 @@
 @import url("https://fonts.googleapis.com/css2?family=Mr+Dafoe&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=Exo:wght@900&display=swap");
+@import "./../../../../node_modules/material-design-icons/iconfont/material-icons.css";
 
 body {
   margin: 0;
@@ -26,6 +27,16 @@ body {
 }
 
 .Time {
+  text-align: left;
+  font-family: Josefin Sans;
+  font-size: 28pt;
+  flex-grow: 1;
+  color: #dddddd;
+  width: 1%;
+  margin-left: 2vw;
+}
+
+.Tray {
   text-align: left;
   font-family: Josefin Sans;
   font-size: 28pt;
