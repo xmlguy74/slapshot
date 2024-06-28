@@ -564,6 +564,7 @@ async function connectBluetooth() {
         });
 
     } catch (e) {        
+        console.warn ("Current game:", current);        
         console.error(e);
         destroy();
         throw e;
