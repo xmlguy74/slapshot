@@ -493,7 +493,7 @@ async function connectBluetooth() {
         });      
 
         await muteSound.startNotifications()
-        timeRemaining.on('valuechanged', buffer => {
+        muteSound.on('valuechanged', buffer => {
             const state = buffer.readFloatLE() == 1;
             current.muteSound = state;
             console.log("Mute Sound: " + state);
