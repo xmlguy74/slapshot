@@ -79,8 +79,8 @@ function App(props: AppProps) {
       <TaskbarSection className="Taskbar">
         <DateTime className="Time" mode={DateTimeMode.Time} style={{visibility: config.showTime ? 'visible' : 'hidden'}}></DateTime>
         <div className="Tray">
-          { currentGame.muteSound && <span className="material-icons" style={{fontSize: '28px'}}>volume_off</span> } 
-          { !currentGame.muteSound && <span className="material-icons" style={{fontSize: '28px'}}>volume_up</span> } 
+          { currentGame.muteSound && <span className="material-icons">volume_off</span> } 
+          { !currentGame.muteSound && <span className="material-icons">volume_up</span> } 
         </div>
         <DateTime className="Date" mode={DateTimeMode.Date} style={{visibility: config.showDate ? 'visible' : 'hidden'}}></DateTime>
       </TaskbarSection>

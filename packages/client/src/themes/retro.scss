@@ -34,6 +34,7 @@ body {
   color: #dddddd;
   width: 1%;
   margin-left: 2vw;
+  text-wrap: nowrap;
 }
 
 .Tray {
@@ -54,6 +55,7 @@ body {
   flex-grow: 1;
   color: #dddddd;
   margin-right: 2vw;
+  text-wrap: nowrap;
 }
 
 .PlayClock {
