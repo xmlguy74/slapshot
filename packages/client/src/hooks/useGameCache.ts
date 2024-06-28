@@ -41,9 +41,9 @@ export function useGameCache(ss: Slapshot): GameCache {
     const [wahwahwahSound, {stop: stopWahWahWahSound}] = useSound('../../www/wahwahwah.mp3', {id: "wahwahwah"});
     const [whistleSound, {stop: stopWhistleSound}] = useSound('../../www/whistle.mp3', {id: "whistle"});
     const [errorSound, {stop: stopErrorSound}] = useSound('../../www/error.mp3', {id: "error"});
-    const [min5Sound, {stop: stopMin5Sound}] = useSound('../../www/5minutegame.mp3', {id: "min5"});
-    const [min10Sound, {stop: stopMin10Sound}] = useSound('../../www/10minutegame.mp3', {id: "min10"});
-    const [min15Sound, {stop: stopMin15Sound}] = useSound('../../www/15minutegame.mp3', {id: "min15"});
+    const [min5Sound, {stop: stopMin5Sound}] = useSound('../../www/5minutegame.wav', {id: "min5"});
+    const [min10Sound, {stop: stopMin10Sound}] = useSound('../../www/10minutegame.wav', {id: "min10"});
+    const [min15Sound, {stop: stopMin15Sound}] = useSound('../../www/15minutegame.wav', {id: "min15"});
    
     useEffect(() => {
         const stopAllSounds = () => {
