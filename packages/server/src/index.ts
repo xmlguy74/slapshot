@@ -153,7 +153,7 @@ async function abortGame() {
 async function setGoal() {
     try {
         fireEvent("setgoal", current);
-        turnOnLight();
+        //turnOnLight();
     } catch (e) {
         console.error(e);
     }
@@ -162,7 +162,7 @@ async function setGoal() {
 async function clearGoal() {
     try {
         fireEvent("cleargoal", current);
-        turnOffLight();
+        //turnOffLight();
     } catch (e) {
         console.error(e);
     }
