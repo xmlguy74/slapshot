@@ -41,6 +41,10 @@ export function useGameCache(ss: Slapshot): GameCache {
     const [wahwahwahSound, {stop: stopWahWahWahSound}] = useSound('../../www/wahwahwah.mp3', {id: "wahwahwah"});
     const [whistleSound, {stop: stopWhistleSound}] = useSound('../../www/whistle.mp3', {id: "whistle"});
     const [errorSound, {stop: stopErrorSound}] = useSound('../../www/error.mp3', {id: "error"});
+
+    const [min5Sound, {stop: stopMin5Sound}] = useSound('../../www/5minutegame.mp3', {id: "min5"});
+    const [min10Sound, {stop: stopMin10Sound}] = useSound('../../www/10minutegame.mp3', {id: "min10"});
+    const [min15Sound, {stop: stopMin15Sound}] = useSound('../../www/15minutegame.mp3', {id: "min15"});
    
     useEffect(() => {
         const stopAllSounds = () => {
@@ -51,6 +55,9 @@ export function useGameCache(ss: Slapshot): GameCache {
             stopWahWahWahSound();
             stopWhistleSound();
             stopErrorSound();
+            stopMin5Sound();
+            stopMin10Sound();
+            stopMin15Sound();
         }
 
         if (ss.ready) {
@@ -137,9 +144,22 @@ export function useGameCache(ss: Slapshot): GameCache {
 
             ssRef.current.on<Game>("updategame", (event) => {
                 console.log("Game Update!");
-                const hadSound = !currentGameRef.current.muteSound;
+                
+                const previous = { ...currentGameRef.current };
+
                 setCurrentGame(event.event.data);
-                if (hadSound && event.event.data.muteSound) {
+                
+                if (previous.timeRemaining !== event.event.data.timeRemaining) {
+                    if (event.event.data.timeRemaining === 300) {
+                        min5Sound();
+                    } else if (event.event.data.timeRemaining === 600) {
+                        min10Sound();
+                    } else if (event.event.data.timeRemaining === 900) {
+                        min15Sound();
+                    }
+                }
+
+                if (!previous.muteSound && event.event.data.muteSound) {
                     stopAllSounds();
                 }
             });
@@ -230,7 +250,10 @@ export function useGameCache(ss: Slapshot): GameCache {
         stopNotifySound, 
         stopWahWahWahSound, 
         stopWhistleSound,
-        stopErrorSound])
+        stopErrorSound,
+        stopMin5Sound,
+        stopMin10Sound,
+        stopMin15Sound])
 
     return {
         players,
