@@ -22,6 +22,7 @@ export type Manager = {
 export type Game = {
     state: number,
     timeRemaining: number,
+    muteSound: boolean,
     home: Manager,
     visitor: Manager,
     issues: {
@@ -43,6 +44,7 @@ export type Player = {
 export const DefaultGame = {
     state: STATE_OFF,
     timeRemaining: 0,
+    muteSound: false,
     home: {
         player: "",
         name: "",

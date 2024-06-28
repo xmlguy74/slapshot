@@ -92,8 +92,13 @@ function App(props: AppProps) {
         { currentGame.state !== STATE_OFF && <>
           <Player mode={PlayerMode.Home} className={currentGame.state === STATE_TAPIN && !currentGame.home.name && "PendingPlayer"} name={getPlayerName(currentGame, PlayerMode.Home)} score={currentGame.home.score}></Player>
           
-          { currentGame.state === STATE_TAPIN && <span className="PressStart">PRESS START</span> }
-          
+          { currentGame.state === STATE_TAPIN && 
+          <div>
+            <div className="PlayClock PlayClock--paused">{formatTime(currentGame?.timeRemaining ?? 0) }</div>
+            PRESS START
+          </div>
+          }
+
           { (currentGame.state === STATE_PLAYING || currentGame.state === STATE_GOAL) && <span className="PlayClock" data-low={(currentGame?.timeRemaining ?? 0) < 15 ? true : false}>{formatTime(currentGame?.timeRemaining ?? 0) }</span> }
           
           { currentGame.state === STATE_TIMEOUT && 

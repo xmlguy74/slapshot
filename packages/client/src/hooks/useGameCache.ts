@@ -79,14 +79,18 @@ export function useGameCache(ss: Slapshot): GameCache {
                 console.log("New game!");
                 setCurrentGame(event.event.data);
                 stopAllSounds();
-                chargeSound();
+                if (!currentGameRef.current.muteSound) {
+                    chargeSound();
+                }
             });
 
             ssRef.current.on<Game>("restartgame", (event) => {
                 console.log("Restart game!");
                 setCurrentGame(event.event.data);
                 stopAllSounds();
-                buzzerSound();
+                if (!currentGameRef.current.muteSound) {
+                    buzzerSound();
+                }
             });
 
             ssRef.current.on<Game>("startgame", (event) => {
@@ -95,10 +99,12 @@ export function useGameCache(ss: Slapshot): GameCache {
                 setCurrentGame(event.event.data);
                 
                 stopAllSounds();
-                if (wasPaused) {
-                    whistleSound();
-                } else {                    
-                    buzzerSound();
+                if (!currentGameRef.current.muteSound) {
+                    if (wasPaused) {
+                        whistleSound();
+                    } else {                    
+                        buzzerSound();
+                    }
                 }
             });
 
@@ -106,20 +112,26 @@ export function useGameCache(ss: Slapshot): GameCache {
                 console.log("Game Over!");
                 setCurrentGame(event.event.data);
                 stopAllSounds();
-                buzzerSound();
+                if (!currentGameRef.current.muteSound) {
+                    buzzerSound();  
+                }
             });
 
             ssRef.current.on<Game>("1up", (event) => {
                 console.log("Player Up!");
                 setCurrentGame(event.event.data);
                 stopAllSounds();
-                notifySound();
+                if (!currentGameRef.current.muteSound) {
+                    notifySound();
+                }
             });
 
             ssRef.current.on("0up", (event) => {
                 console.log("Unknown Player!");
                 stopAllSounds();
-                errorSound();
+                if (!currentGameRef.current.muteSound) {
+                    errorSound();
+                }
                 setMessage({ error: true, text: "Unknown player. Please register and try again."});
             });
 
@@ -132,28 +144,36 @@ export function useGameCache(ss: Slapshot): GameCache {
                 console.log("Game Aborted!");
                 setCurrentGame(event.event.data);
                 stopAllSounds();
-                wahwahwahSound();
+                if (!currentGameRef.current.muteSound) {
+                    wahwahwahSound();
+                }
             });
 
             ssRef.current.on<Game>("pausegame", (event) => {
                 console.log("Game Paused!");
                 setCurrentGame(event.event.data);
                 stopAllSounds();
-                whistleSound();
+                if (!currentGameRef.current.muteSound) {
+                    whistleSound();
+                }
             });
 
             ssRef.current.on<Game>("resumegame", (event) => {
                 console.log("Game Resumed!");
                 setCurrentGame(event.event.data);
                 stopAllSounds();
-                whistleSound();
+                if (!currentGameRef.current.muteSound) {
+                    whistleSound();
+                }
             });
 
             ssRef.current.on<Game>("setgoal", (event) => {
                 console.log("Set Goal!");
                 setCurrentGame(event.event.data);
                 stopAllSounds();
-                cheerSound();
+                if (!currentGameRef.current.muteSound) {
+                    cheerSound();
+                }
                 setGoal(true);
             });
 
