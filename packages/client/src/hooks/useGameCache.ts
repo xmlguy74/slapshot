@@ -236,7 +236,8 @@ export function useGameCache(ss: Slapshot): GameCache {
             });
 
             ssRef.current.on("off", (event) => {
-                setCurrentGame(DefaultGame);
+                const prev = currentGameRef.current;
+                setCurrentGame({...DefaultGame, muteSound: prev.muteSound});
                 stopAllSounds();
             });
         }        
