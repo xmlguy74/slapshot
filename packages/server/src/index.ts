@@ -4,7 +4,8 @@ import WebSocket from 'ws';
 import { WSCommand, Game, GameUpdate, WSMessage, Player, ResultMessage, MQTTCommand, Manager } from './types';
 import crypto from 'crypto';
 import child_process from 'child_process';
-import { Bluetooth, Device, createBluetooth } from "node-ble";
+import { Device, createBluetooth } from "node-ble";
+import { exec } from 'child_process';
 
 const PORT = 3001;
 const GAME_TIME = 300; /* 5 min */
@@ -152,6 +153,7 @@ async function abortGame() {
 async function setGoal() {
     try {
         fireEvent("setgoal", current);
+        turnOnLight();
     } catch (e) {
         console.error(e);
     }
@@ -160,6 +162,7 @@ async function setGoal() {
 async function clearGoal() {
     try {
         fireEvent("cleargoal", current);
+        turnOffLight();
     } catch (e) {
         console.error(e);
     }
@@ -553,6 +556,23 @@ async function connectBluetooth() {
 
     return { device, destroy };
 }
+
+function turnOnLight() {
+    exec('gpio write 6 1', (error, stdout, stderr) => {
+        if (error) {
+            console.error(error);
+        }
+    });
+}
+
+function turnOffLight() {
+    exec('gpio write 6 0', (error, stdout, stderr) => {
+        if (error) {
+            console.error(error);
+        }
+    });
+}
+
 
 async function main() {    
     
