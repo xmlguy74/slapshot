@@ -79,7 +79,7 @@ export function useGameCache(ss: Slapshot): GameCache {
                 console.log("New game!");
                 setCurrentGame(event.event.data);
                 stopAllSounds();
-                if (!currentGameRef.current.muteSound) {
+                if (!event.event.data.muteSound) {
                     chargeSound();
                 }
             });
@@ -88,7 +88,7 @@ export function useGameCache(ss: Slapshot): GameCache {
                 console.log("Restart game!");
                 setCurrentGame(event.event.data);
                 stopAllSounds();
-                if (!currentGameRef.current.muteSound) {
+                if (!event.event.data.muteSound) {
                     buzzerSound();
                 }
             });
@@ -99,7 +99,7 @@ export function useGameCache(ss: Slapshot): GameCache {
                 setCurrentGame(event.event.data);
                 
                 stopAllSounds();
-                if (!currentGameRef.current.muteSound) {
+                if (!event.event.data.muteSound) {
                     if (wasPaused) {
                         whistleSound();
                     } else {                    
@@ -112,7 +112,7 @@ export function useGameCache(ss: Slapshot): GameCache {
                 console.log("Game Over!");
                 setCurrentGame(event.event.data);
                 stopAllSounds();
-                if (!currentGameRef.current.muteSound) {
+                if (!event.event.data.muteSound) {
                     buzzerSound();  
                 }
             });
@@ -121,7 +121,7 @@ export function useGameCache(ss: Slapshot): GameCache {
                 console.log("Player Up!");
                 setCurrentGame(event.event.data);
                 stopAllSounds();
-                if (!currentGameRef.current.muteSound) {
+                if (!event.event.data.muteSound) {
                     notifySound();
                 }
             });
@@ -139,7 +139,7 @@ export function useGameCache(ss: Slapshot): GameCache {
                 console.log("Game Update!");
                 const hadSound = !currentGameRef.current.muteSound;
                 setCurrentGame(event.event.data);
-                if (hadSound && currentGameRef.current.muteSound) {
+                if (hadSound && event.event.data.muteSound) {
                     stopAllSounds();
                 }
             });
@@ -148,7 +148,7 @@ export function useGameCache(ss: Slapshot): GameCache {
                 console.log("Game Aborted!");
                 setCurrentGame(event.event.data);
                 stopAllSounds();
-                if (!currentGameRef.current.muteSound) {
+                if (!event.event.data.muteSound) {
                     wahwahwahSound();
                 }
             });
@@ -157,7 +157,7 @@ export function useGameCache(ss: Slapshot): GameCache {
                 console.log("Game Paused!");
                 setCurrentGame(event.event.data);
                 stopAllSounds();
-                if (!currentGameRef.current.muteSound) {
+                if (!event.event.data.muteSound) {
                     whistleSound();
                 }
             });
@@ -166,7 +166,7 @@ export function useGameCache(ss: Slapshot): GameCache {
                 console.log("Game Resumed!");
                 setCurrentGame(event.event.data);
                 stopAllSounds();
-                if (!currentGameRef.current.muteSound) {
+                if (!event.event.data.muteSound) {
                     whistleSound();
                 }
             });
@@ -175,7 +175,7 @@ export function useGameCache(ss: Slapshot): GameCache {
                 console.log("Set Goal!");
                 setCurrentGame(event.event.data);
                 stopAllSounds();
-                if (!currentGameRef.current.muteSound) {
+                if (!event.event.data.muteSound) {
                     cheerSound();
                 }
                 setGoal(true);
