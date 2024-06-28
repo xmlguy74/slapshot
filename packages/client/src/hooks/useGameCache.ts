@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { GetCurrentGameCommand, GetCurrentGameMessage, GetPlayersCommand, GetPlayersMessage, Message, Slapshot } from "./useSlapshot";
-import { DefaultGame, Game, Notify, Player, STATE_TIMEOUT } from "../types";
+import { DefaultGame, Game, Notify, Player, STATE_TAPIN, STATE_TIMEOUT } from "../types";
 import useSound from 'use-sound';
 
 export interface GameCache {
@@ -41,7 +41,6 @@ export function useGameCache(ss: Slapshot): GameCache {
     const [wahwahwahSound, {stop: stopWahWahWahSound}] = useSound('../../www/wahwahwah.mp3', {id: "wahwahwah"});
     const [whistleSound, {stop: stopWhistleSound}] = useSound('../../www/whistle.mp3', {id: "whistle"});
     const [errorSound, {stop: stopErrorSound}] = useSound('../../www/error.mp3', {id: "error"});
-
     const [min5Sound, {stop: stopMin5Sound}] = useSound('../../www/5minutegame.mp3', {id: "min5"});
     const [min10Sound, {stop: stopMin10Sound}] = useSound('../../www/10minutegame.mp3', {id: "min10"});
     const [min15Sound, {stop: stopMin15Sound}] = useSound('../../www/15minutegame.mp3', {id: "min15"});
@@ -146,20 +145,26 @@ export function useGameCache(ss: Slapshot): GameCache {
                 console.log("Game Update!");
                 
                 const previous = { ...currentGameRef.current };
+                const next = { ...event.event.data };
 
-                setCurrentGame(event.event.data);
+                setCurrentGame(next);
                 
-                if (previous.timeRemaining !== event.event.data.timeRemaining) {
-                    if (event.event.data.timeRemaining === 300) {
-                        min5Sound();
-                    } else if (event.event.data.timeRemaining === 600) {
-                        min10Sound();
-                    } else if (event.event.data.timeRemaining === 900) {
-                        min15Sound();
+                if (!next.muteSound) {
+                    if (next.state === STATE_TAPIN && previous.timeRemaining !== next.timeRemaining) {
+                        if (next.timeRemaining === 300) {
+                            stopAllSounds();
+                            min5Sound();
+                        } else if (next.timeRemaining === 600) {
+                            stopAllSounds();
+                            min10Sound();
+                        } else if (next.timeRemaining === 900) {
+                            stopAllSounds();
+                            min15Sound();
+                        }
                     }
                 }
 
-                if (!previous.muteSound && event.event.data.muteSound) {
+                if (!previous.muteSound && next.muteSound) {
                     stopAllSounds();
                 }
             });
@@ -244,6 +249,9 @@ export function useGameCache(ss: Slapshot): GameCache {
         wahwahwahSound, 
         whistleSound, 
         errorSound,
+        min5Sound,
+        min10Sound,
+        min15Sound,
         stopChargeSound, 
         stopBuzzerSound, 
         stopCheerSound, 
