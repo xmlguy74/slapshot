@@ -425,7 +425,7 @@ async function connectBluetooth() {
         //read current state
         current.state = (await gameState.readValue()).readFloatLE();
         current.timeRemaining = (await timeRemaining.readValue()).readFloatLE();
-        current.muteSound = (await muteSound.readValue())[0] == 1;
+        current.muteSound = (await muteSound.readValue()).readFloatLE() == 1;
         current.home.player = (await homePlayer.readValue()).toString('utf-8');
         current.home.score = (await homeScore.readValue()).readFloatLE();
         current.home.status = (await homeStatus.readValue()).toString('utf-8');
@@ -494,7 +494,7 @@ async function connectBluetooth() {
 
         await muteSound.startNotifications()
         timeRemaining.on('valuechanged', buffer => {
-            const state = buffer[0] == 1;
+            const state = buffer.readFloatLE() == 1;
             current.muteSound = state;
             console.log("Mute Sound: " + state);
             
