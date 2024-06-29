@@ -154,7 +154,7 @@ async function abortGame() {
 async function setGoal() {
     try {
         fireEvent("setgoal", current);
-        //turnOnLight();
+        turnOnLight();
     } catch (e) {
         console.error(e);
     }
@@ -163,7 +163,7 @@ async function setGoal() {
 async function clearGoal() {
     try {
         fireEvent("cleargoal", current);
-        //turnOffLight();
+        turnOffLight();
     } catch (e) {
         console.error(e);
     }
@@ -635,6 +635,14 @@ async function main() {
 
     process.on('SIGINT', shutdown);
     process.on('SIGTERM', shutdown);
+
+    exec('gpio mode 6 out', (error, stdout, stderr) => {
+        if (error) {
+            console.error('Failed to configure GPIO 6 for output. ', error);
+        } else {
+            console.log('Configured GPIO 6 for output.');
+        }
+    });
 
     const server = app.listen(PORT, () => {
         console.log(`[server]: Server is running at http://localhost:${PORT}`);
