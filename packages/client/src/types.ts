@@ -39,11 +39,6 @@ export type Player = {
     wins?: number,
     loses?: number,
     ties?: number,
-    audio?: PlayerAudio,
-}
-
-export type PlayerAudio = {
-    [key: string]: string,
 }
 
 export const DefaultGame = {

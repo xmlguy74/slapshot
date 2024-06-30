@@ -25,11 +25,15 @@ export type Player = {
     wins?: number,
     loses?: number,
     ties?: number,
-    audio?: PlayerAudio,
 }
 
-export type PlayerAudio = {
-    [key: string]: string
+export type GameUpdate = {
+    timeRemaining: number;
+}
+
+export interface MQTTCommand {
+    command: 'new'|'tapin'|'start'|'restart'|'abort'|'score'|'update'|'end'|'pause'|'off'|'reboot',
+    [key: string]: any,
 }
 
 export interface WSCommand {
