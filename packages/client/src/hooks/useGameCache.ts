@@ -15,6 +15,10 @@ export interface GameCache {
 
 export function useGameCache(ss: Slapshot): GameCache {
     
+    const [init, setInit] = useState<boolean>(false);
+    const initRef = useRef(init);
+    initRef.current = init;
+
     const [players, setPlayers] = useState<Player[]>([]);    
     const playersRef = useRef<Player[]>();
     playersRef.current = players;
@@ -60,21 +64,26 @@ export function useGameCache(ss: Slapshot): GameCache {
         }
 
         if (ss.ready) {
-            ssRef.current.send(new GetPlayersCommand(), (msg: Message) => {
-                const resp = msg as GetPlayersMessage;
-                if (resp.success) {
-                    console.log('Initialized player cache.');
-                    setPlayers(resp.result);
-                }
-            });
+            
+            if (!initRef.current) {
+                ssRef.current.send(new GetPlayersCommand(), (msg: Message) => {
+                    const resp = msg as GetPlayersMessage;
+                    if (resp.success) {
+                        console.log('Initialized player cache.');
+                        setPlayers(resp.result);
+                    }
+                });
 
-            ssRef.current.send(new GetCurrentGameCommand(), (msg: Message) => {
-                const resp = msg as GetCurrentGameMessage;
-                if (resp.success) {
-                    console.log('Initialized game cache.');
-                    setCurrentGame(resp.result);
-                }
-            });
+                ssRef.current.send(new GetCurrentGameCommand(), (msg: Message) => {
+                    const resp = msg as GetCurrentGameMessage;
+                    if (resp.success) {
+                        console.log('Initialized game cache.');
+                        setCurrentGame(resp.result);
+                    }
+                });
+
+                setInit(true);
+            }
 
             ssRef.current.on<Notify>("notify", (event) => {
                 console.log("Notify!");
@@ -240,7 +249,9 @@ export function useGameCache(ss: Slapshot): GameCache {
                 setCurrentGame({...DefaultGame, muteSound: prev.muteSound});
                 stopAllSounds();
             });
-        }        
+        } else {
+            setInit(false);
+        }
     }, [
         ss.ready, 
         cheerSound, 
