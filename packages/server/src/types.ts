@@ -25,6 +25,7 @@ export type Player = {
     wins?: number,
     loses?: number,
     ties?: number,
+    audio?: any,
 }
 
 export type GameUpdate = {

@@ -644,6 +644,16 @@ async function main() {
         }
     });
 
+    const ps = await players.values<string, Player>(null).all();
+    for (let i = 0; i < ps.length; i++) {
+        const p = ps[i];
+        if (p.audio) {
+            console.log('Cleaning up audio for player: ' + p.id);
+            p.audio = undefined;
+            await players.put(p.id, p, null);
+        }
+    }
+
     const server = app.listen(PORT, () => {
         console.log(`[server]: Server is running at http://localhost:${PORT}`);
     });
