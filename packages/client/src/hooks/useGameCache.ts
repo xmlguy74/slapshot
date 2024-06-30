@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { GetCurrentGameCommand, GetCurrentGameMessage, GetPlayersCommand, GetPlayersMessage, Message, Slapshot } from "./useSlapshot";
 import { DefaultGame, Game, Notify, Player, STATE_TAPIN, STATE_TIMEOUT } from "../types";
 import useSound from 'use-sound';
+import Howler from 'howler';
 
 export interface GameCache {
     players: Player[],
@@ -15,6 +16,10 @@ export interface GameCache {
 
 export function useGameCache(ss: Slapshot): GameCache {
     
+    const [init, setInit] = useState<boolean>(false);
+    const initRef = useRef<boolean>();
+    initRef.current = init;
+
     const [players, setPlayers] = useState<Player[]>([]);    
     const playersRef = useRef<Player[]>();
     playersRef.current = players;
@@ -31,6 +36,10 @@ export function useGameCache(ss: Slapshot): GameCache {
     const messageRef = useRef(message);
     messageRef.current = message;
 
+    const[audio, setAudio] = useState<Function>(null);
+    const audioRef = useRef<Function>();
+    audioRef.current = audio;    
+
     const ssRef = useRef<Slapshot>();
     ssRef.current = ss;
 
@@ -46,35 +55,41 @@ export function useGameCache(ss: Slapshot): GameCache {
     const [min15Sound, {stop: stopMin15Sound}] = useSound('../../www/15minutegame.wav', {id: "min15"});
    
     useEffect(() => {
-        const stopAllSounds = () => {
-            stopCheerSound();
-            stopChargeSound();
-            stopNotifySound();
-            stopBuzzerSound();
-            stopWahWahWahSound();
-            stopWhistleSound();
-            stopErrorSound();
-            stopMin5Sound();
-            stopMin10Sound();
-            stopMin15Sound();
-        }
+        const playSound = (sound: Function, stopSound: Function) => {
+            if (audioRef.current) {
+                audioRef.current();
+            }
+            setAudio(stopSound);
+            if (sound) {
+                sound();
+            }
+        };
+
+        const stopSound = () => {
+            playSound(null, null);
+        };
 
         if (ss.ready) {
-            ssRef.current.send(new GetPlayersCommand(), (msg: Message) => {
-                const resp = msg as GetPlayersMessage;
-                if (resp.success) {
-                    console.log('Initialized player cache.');
-                    setPlayers(resp.result);
-                }
-            });
+            
+            if (!initRef.current) {
+                ssRef.current.send(new GetPlayersCommand(), (msg: Message) => {
+                    const resp = msg as GetPlayersMessage;
+                    if (resp.success) {
+                        console.log('Initialized player cache.');
+                        setPlayers(resp.result);
+                    }
+                });
 
-            ssRef.current.send(new GetCurrentGameCommand(), (msg: Message) => {
-                const resp = msg as GetCurrentGameMessage;
-                if (resp.success) {
-                    console.log('Initialized game cache.');
-                    setCurrentGame(resp.result);
-                }
-            });
+                ssRef.current.send(new GetCurrentGameCommand(), (msg: Message) => {
+                    const resp = msg as GetCurrentGameMessage;
+                    if (resp.success) {
+                        console.log('Initialized game cache.');
+                        setCurrentGame(resp.result);
+                    }
+                });
+
+                setInit(true);
+            }
 
             ssRef.current.on<Notify>("notify", (event) => {
                 console.log("Notify!");
@@ -84,32 +99,28 @@ export function useGameCache(ss: Slapshot): GameCache {
             ssRef.current.on<Game>("newgame", (event) => {
                 console.log("New game!");
                 setCurrentGame(event.event.data);
-                stopAllSounds();
                 if (!event.event.data.muteSound) {
-                    chargeSound();
+                    playSound(chargeSound, stopChargeSound);
                 }
             });
 
             ssRef.current.on<Game>("restartgame", (event) => {
                 console.log("Restart game!");
                 setCurrentGame(event.event.data);
-                stopAllSounds();
                 if (!event.event.data.muteSound) {
-                    buzzerSound();
+                    playSound(buzzerSound, stopBuzzerSound);
                 }
             });
 
             ssRef.current.on<Game>("startgame", (event) => {
                 console.log("Start game!");
                 const wasPaused = currentGameRef.current?.state === STATE_TIMEOUT;
-                setCurrentGame(event.event.data);
-                
-                stopAllSounds();
+                setCurrentGame(event.event.data);                
                 if (!event.event.data.muteSound) {
                     if (wasPaused) {
-                        whistleSound();
+                        playSound(whistleSound, stopWhistleSound);
                     } else {                    
-                        buzzerSound();
+                        playSound(buzzerSound, buzzerSound);
                     }
                 }
             });
@@ -117,26 +128,23 @@ export function useGameCache(ss: Slapshot): GameCache {
             ssRef.current.on<Game>("gameover", (event) => {
                 console.log("Game Over!");
                 setCurrentGame(event.event.data);
-                stopAllSounds();
                 if (!event.event.data.muteSound) {
-                    buzzerSound();  
+                    playSound(buzzerSound, stopBuzzerSound);
                 }
             });
 
             ssRef.current.on<Game>("1up", (event) => {
                 console.log("Player Up!");
                 setCurrentGame(event.event.data);
-                stopAllSounds();
                 if (!event.event.data.muteSound) {
-                    notifySound();
+                    playSound(notifySound, stopNotifySound);
                 }
             });
 
             ssRef.current.on("0up", (event) => {
                 console.log("Unknown Player!");
-                stopAllSounds();
                 if (!currentGameRef.current.muteSound) {
-                    errorSound();
+                    playSound(errorSound, stopErrorSound);
                 }
                 setMessage({ error: true, text: "Unknown player. Please register and try again."});
             });
@@ -149,67 +157,78 @@ export function useGameCache(ss: Slapshot): GameCache {
 
                 setCurrentGame(next);
                 
-                if (!next.muteSound) {
+                if (!next.muteSound) {                    
                     if (next.state === STATE_TAPIN && previous.timeRemaining !== next.timeRemaining) {
                         if (next.timeRemaining === 300) {
-                            stopAllSounds();
-                            min5Sound();
+                            playSound(min5Sound, stopMin5Sound);
                         } else if (next.timeRemaining === 600) {
-                            stopAllSounds();
-                            min10Sound();
+                            playSound(min10Sound, stopMin10Sound);
                         } else if (next.timeRemaining === 900) {
-                            stopAllSounds();
-                            min15Sound();
+                            playSound(min15Sound, stopMin15Sound);
                         }
                     }
                 }
 
                 if (!previous.muteSound && next.muteSound) {
-                    stopAllSounds();
+                    stopSound();
                 }
             });
 
             ssRef.current.on<Game>("abortgame", (event) => {
                 console.log("Game Aborted!");
                 setCurrentGame(event.event.data);
-                stopAllSounds();
                 if (!event.event.data.muteSound) {
-                    wahwahwahSound();
+                    playSound(wahwahwahSound, stopWahWahWahSound);
                 }
             });
 
             ssRef.current.on<Game>("pausegame", (event) => {
                 console.log("Game Paused!");
                 setCurrentGame(event.event.data);
-                stopAllSounds();
                 if (!event.event.data.muteSound) {
-                    whistleSound();
+                    playSound(whistleSound, stopWhistleSound);
                 }
             });
 
             ssRef.current.on<Game>("resumegame", (event) => {
                 console.log("Game Resumed!");
                 setCurrentGame(event.event.data);
-                stopAllSounds();
                 if (!event.event.data.muteSound) {
-                    whistleSound();
+                    playSound(whistleSound, stopWhistleSound);
                 }
             });
 
             ssRef.current.on<Game>("setgoal", (event) => {
                 console.log("Set Goal!");
-                setCurrentGame(event.event.data);
-                stopAllSounds();
+                const prev = currentGameRef.current;
+                const next = event.event.data;
+                setCurrentGame(next);
+                
                 if (!event.event.data.muteSound) {
-                    cheerSound();
+                    let p: string = null;
+                    if (prev.home.score !== next.home.score) {
+                        p = next.home.player;
+                    } else if (prev.visitor.score !== next.visitor.score) {
+                        p = next.visitor.player;
+                    }
+                    const player = playersRef.current.find(i => i.id === p);
+                    if (player?.audio?.goal) {
+                        (new Howler.Howl({
+                            src: player.audio.goal,
+                            loop: false,                                
+                        })).play();
+                    } else {
+                        playSound(cheerSound, stopCheerSound);
+                    }
                 }
+
                 setGoal(true);
             });
 
             ssRef.current.on<Game>("cleargoal", (event) => {
                 console.log("Set Goal!");
                 setCurrentGame(event.event.data);
-                stopAllSounds();
+                stopSound();
                 setGoal(false);
             });
 
@@ -238,7 +257,7 @@ export function useGameCache(ss: Slapshot): GameCache {
             ssRef.current.on("off", (event) => {
                 const prev = currentGameRef.current;
                 setCurrentGame({...DefaultGame, muteSound: prev.muteSound});
-                stopAllSounds();
+                stopSound();
             });
         }        
     }, [
@@ -262,7 +281,8 @@ export function useGameCache(ss: Slapshot): GameCache {
         stopErrorSound,
         stopMin5Sound,
         stopMin10Sound,
-        stopMin15Sound])
+        stopMin15Sound,        
+    ])
 
     return {
         players,

@@ -1,11 +1,18 @@
 import express from 'express';
 import { Level } from 'level';
 import WebSocket from 'ws';
-import { WSCommand, Game, GameUpdate, WSMessage, Player, ResultMessage, MQTTCommand, Manager } from './types';
+import { WSCommand, Game, WSMessage, Player, ResultMessage, Manager } from './types';
 import crypto from 'crypto';
 import child_process from 'child_process';
 import { Device, createBluetooth } from "node-ble";
 import { exec } from 'child_process';
+import 'dotenv/config';
+import md5 from 'md5';
+import fs from 'fs';
+import { Readable } from 'stream';
+import { finished } from 'stream/promises';
+import axios from 'axios';
+import path from 'path';
 
 const PORT = 3001;
 const GAME_TIME = 300; /* 5 min */
@@ -213,6 +220,7 @@ app.use('/www', express.static('./dist/www'));
 app.get('/api/players', async (req, res) => {
     try {
         const results = await players.values().all();
+        console.log(results);
         res.send(results);
     } catch (e) {
         res.status(500).send(e);
@@ -304,6 +312,68 @@ app.get('/api/games/current', async(req, res) => {
         res.status(500).send(e);
     }
 });
+
+async function generateAudio(text: string): Promise<string> {
+    if (!process.env.OPENAI_API_KEY) {
+        return null;
+    }
+
+    const voice = 'onyx';
+    const fingerprint = `${voice}-${md5(text)}`;
+    const audioPath = path.join(process.cwd(), `./db/audio`);
+    const audioFullPath = path.join(audioPath, `${fingerprint}.wav`);
+
+    //if we already have the file, use it
+    if (!fs.existsSync(audioFullPath)) {
+        console.log(`Calling the AI to generate audio: "${text}"`);
+        const data = await axios.post(`https://api.openai.com/v1/audio/speech`, {                
+                model: 'tts-1',
+                input: text,
+                voice,
+                speed: 0.70,
+                response_format: 'wav'
+            }, {
+                headers: {
+                    'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+                    'Content-Type': 'application/json'
+                },
+                responseType: 'stream'
+            });
+
+        if (data.status == 200) {
+            //save the generated audio to a file
+            if (!fs.existsSync(audioPath)) {
+                fs.mkdirSync(audioPath, { recursive: true });
+            }
+
+            const audioFile = fs.createWriteStream(audioFullPath, { flags: 'wx' });
+            try {
+                data.data.pipe(audioFile);
+                // return a promise and resolve when download finishes
+                const p = new Promise<void>((resolve, reject) => {
+                    data.data.on('end', () => {
+                        resolve()
+                    })
+
+                    data.data.on('error', () => {
+                        reject()
+                    })
+                })        
+
+                await p;
+            } finally {                
+                audioFile.close();
+            }
+        } else {
+            console.error("Failed to generate audio. ", data.status, data.statusText);
+            return null;
+        }
+    }
+    
+    //get the base64 content of the file
+    const base64 = fs.readFileSync(audioFullPath).toString('base64');
+    return `data:audio/wav;base64,${base64}`;
+}
 
 function fireEvent(name: string, data?: any) {
     wss.clients.forEach(c => c.readyState == c.OPEN && c.send(JSON.stringify({
@@ -643,6 +713,29 @@ async function main() {
             console.log('Configured GPIO 6 for output.');
         }
     });
+
+    //generate voice files for each player
+    const everyone = await players.values<string, Player>(null).all();
+    for (let i = 0; i < everyone.length; i++) {
+        const player = everyone[i];
+        
+        if (!player.audio) {
+            player.audio = {};
+        }
+
+        if (player.audio.welcome) {
+            player.audio.welcome = undefined;
+        }
+
+        if (!player.audio.goal) {
+            const clip = await generateAudio(`${player.name} scores!!!.`);
+            if (clip) {
+                player.audio.goal = clip;
+            }
+        }
+
+        await players.put(player.id, player, null);
+    }
 
     const server = app.listen(PORT, () => {
         console.log(`[server]: Server is running at http://localhost:${PORT}`);

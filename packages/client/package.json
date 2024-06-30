@@ -14,6 +14,7 @@
     "@types/react": "^18.2.33",
     "@types/react-dom": "^18.2.14",
     "format-duration": "^3.0.2",
+    "howler": "^2.2.4",
     "material-design-icons": "^3.0.1",
     "moment": "^2.29.4",
     "react": "^18.2.0",
@@ -51,6 +52,7 @@
     ]
   },
   "devDependencies": {
+    "@types/react-howler": "^5.2.3",
     "sass": "^1.49.0"
   },
   "main": "index.js",
