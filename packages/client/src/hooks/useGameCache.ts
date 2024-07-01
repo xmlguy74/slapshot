@@ -1,23 +1,21 @@
 import { useEffect, useRef, useState } from "react";
 import { GetCurrentGameCommand, GetCurrentGameMessage, GetPlayersCommand, GetPlayersMessage, Message, Slapshot } from "./useSlapshot";
-import { DefaultGame, Game, Notify, Player, STATE_TAPIN, STATE_TIMEOUT } from "../types";
+import { DefaultGame, Game, GameMessage, Notify, Player, STATE_TAPIN, STATE_TIMEOUT } from "../types";
 import useSound from 'use-sound';
 import { Howler, Howl } from 'howler';
-import { delay } from "../utils";
+import { error } from "console";
 
 export interface GameCache {
     players: Player[],
     currentGame: Game,
     goal: boolean,
-    message?: {
-        error: boolean,
-        text: string,
-    }
+    message: GameMessage,
 }
 
-const AudioState = {
-    runningAudioPlaylist: false,
-    requestStop: false
+type NotifyOptions = {
+    id?: string,
+    error?: boolean,
+    sticky?: boolean,
 }
 
 export function useGameCache(ss: Slapshot): GameCache {
@@ -38,9 +36,9 @@ export function useGameCache(ss: Slapshot): GameCache {
     const goalRef = useRef(goal);
     goalRef.current = goal;
 
-    const [message, setMessage] = useState<{error: boolean, text: string}>(null);
-    const messageRef = useRef(message);
-    messageRef.current = message;
+    const [message, setMessage] = useState<GameMessage>(null);
+    const messagesRef = useRef(message);
+    messagesRef.current = message;
 
     const ssRef = useRef<Slapshot>();
     ssRef.current = ss;
@@ -51,26 +49,29 @@ export function useGameCache(ss: Slapshot): GameCache {
     const [, {sound: notifySound}] = useSound('../../www/notification.wav', {id: "notify"});
     const [, {sound: wahwahwahSound}] = useSound('../../www/wahwahwah.mp3', {id: "wahwahwah"});
     const [, {sound: whistleSound}] = useSound('../../www/whistle.mp3', {id: "whistle"});
-    const [, {sound:errorSound}] = useSound('../../www/error.mp3', {id: "error"});
+    const [, {sound: errorSound}] = useSound('../../www/error.mp3', {id: "error"});
+        
+    useEffect(() => {            
 
-    useEffect(() => {
-                
-        const stopAudio = async () => {
-            AudioState.requestStop = true;
-            try {
-                Howler.stop();
-                while (AudioState.runningAudioPlaylist) {
-                    await delay(250);
-                }
-                Howler.stop();
-            } finally {
-                await delay(250);
-                AudioState.requestStop = false;
-            }
+        if (!errorSound || !notifySound)
+            return;
+
+        const notify = (text: string, options?: NotifyOptions) => {
+            playAudio(options?.error ? errorSound : notifySound, speak(text));
+            setMessage({
+                error: options?.error ?? false, 
+                text: text, 
+                sticky: options?.sticky ?? false, 
+                id: options?.id
+            });
+        };
+    
+        const stopAudio = () => {
+            Howler.stop();
         }
     
-        const speak = async (text: string, speed: number = 1): Promise<Howl> => {
-            await stopAudio();
+        const speak = (text: string, speed: number = 1): Howl => {
+            stopAudio();
             const sound = new Howl({
                 src: `http://localhost:3001/api/say?text=${encodeURIComponent(text)}&speed=${speed}`,
                 format: 'wav',
@@ -83,42 +84,25 @@ export function useGameCache(ss: Slapshot): GameCache {
                 volume: 1,
                 autoplay: true,
                 preload: true,
-                html5: true,
+                html5: false,
             });
             return sound;
         }
 
-        const playAudio = async (sound: Howl) => {
-            await stopAudio();
-            if (!currentGameRef.current.muteSound) {
-                sound.play();
-            }
-        }
-
-        const playlistAudio = async (sounds: Howl[]) => {
-            await stopAudio();
-            AudioState.runningAudioPlaylist = true;
-            try {
-                if (!currentGameRef.current.muteSound) {                
-                    for (let i = 0; i < sounds.length; i++) {
-                        const s = sounds[i];
-                        const id = s.play();
-                        await delay(250);
-                        while (s.state() !== "loaded") {
-                            await delay(100);
+        const playAudio = (...sounds: Howl[]) => {
+            stopAudio();
+            if (!currentGameRef.current.muteSound) {                
+                let i = 0;
+                const play = () => {
+                    const s = sounds[i++];
+                    s.once("end", () => {
+                        if (i < sounds.length) {
+                            play();
                         }
-                        while (s.playing(id)) {
-                            await delay(100);
-                            if (AudioState.requestStop) {
-                                s.stop(id);
-                                return;
-                            }
-                        }
-                    }
-                }
-            } finally {
-                await delay(250);
-                AudioState.runningAudioPlaylist = false;
+                    });
+                    s.play();
+                };
+                play();
             }
         };
 
@@ -140,25 +124,27 @@ export function useGameCache(ss: Slapshot): GameCache {
                         setCurrentGame(resp.result);
                     }
                 });
-
+                
+                notify("Connected to service.", {id: "ISSUE_SERVICE_CONNECTION"});
                 setInit(true);
             }
 
             ssRef.current.on<Notify>("notify", async (event) => {
                 console.log("Notify!");
-                setMessage({ error: event.event.data.error, text: event.event.data.text});
+                const n = event.event.data;
+                notify(n.text, { error: n.options?.error ?? false, sticky: false, id: n.options?.id});
             });
 
             ssRef.current.on<Game>("newgame", async (event) => {
                 console.log("New game!");
                 setCurrentGame(event.event.data);
-                await playlistAudio([await speak("Welcome to the Morris Family gameroom."), chargeSound]);
+                playAudio(speak("Welcome to the Morris Family gameroom."), chargeSound);
             });
 
             ssRef.current.on<Game>("restartgame", async (event) => {
                 console.log("Restart game!");
                 setCurrentGame(event.event.data);
-                await playlistAudio([buzzerSound, await speak("Game restarted.")]);
+                playAudio(buzzerSound, speak("Game restarted."));
             });
 
             ssRef.current.on<Game>("startgame", async (event) => {
@@ -166,16 +152,16 @@ export function useGameCache(ss: Slapshot): GameCache {
                 const wasPaused = currentGameRef.current?.state === STATE_TIMEOUT;
                 setCurrentGame(event.event.data);                
                 if (wasPaused) {
-                    await playAudio(whistleSound);
+                    playAudio(whistleSound);
                 } else {                    
-                    await playAudio(buzzerSound);
+                    playAudio(buzzerSound);
                 }
             });
 
             ssRef.current.on<Game>("gameover", async (event) => {
                 console.log("Game Over!");
                 setCurrentGame(event.event.data);
-                await playlistAudio([buzzerSound, await speak("Game over.")]);
+                playAudio(buzzerSound, speak("Game over."));
             });
 
             ssRef.current.on<Game>("1up", async (event) => {
@@ -186,16 +172,15 @@ export function useGameCache(ss: Slapshot): GameCache {
                 
                 //did we get both players?
                 if (next.home.name && next.visitor.name) {
-                    await playlistAudio([notifySound, await speak(`${next.home.name} versus ${next.visitor.name}. Press start to begin.`, 0.90)]);
+                    playAudio(notifySound, speak(`${next.home.name} versus ${next.visitor.name}. Press start to begin.`, 0.90));
                 } else {
-                    await playAudio(notifySound);
+                    playAudio(notifySound);
                 }
             });
 
             ssRef.current.on("0up", async (event) => {
                 console.log("Unknown Player!");
-                await playAudio(errorSound);
-                setMessage({ error: true, text: "Unknown player. Please register and try again."});
+                notify("Unknown player. Please register and try again.", {error: true, sticky: false});
             });
 
             ssRef.current.on<Game>("updategame", async (event) => {
@@ -204,51 +189,57 @@ export function useGameCache(ss: Slapshot): GameCache {
                 const previous = currentGameRef.current;
                 const next = event.event.data;
                 setCurrentGame(next);
+
+                const newIssues = Object.keys(next.issues).filter(k => !previous.issues[k]);
+                newIssues.forEach(k => {
+                    const issue = next.issues[k];
+                    notify(issue, {error: true, sticky: true, id: k});
+                });
                 
                 if (next.state === STATE_TAPIN && previous.timeRemaining !== next.timeRemaining) {
                     if (next.timeRemaining === 300) {
-                        await playAudio(await speak("Five minute game."));
+                        playAudio(speak("Five minute game."));
                     } else if (next.timeRemaining === 600) {
-                        await playAudio(await speak("Ten minute game."));
+                        playAudio(speak("Ten minute game."));
                     } else if (next.timeRemaining === 900) {
-                        await playAudio(await speak("Fifteen minute game."));
+                        playAudio(speak("Fifteen minute game."));
                     }
                 }
 
                 if (!previous.muteSound && next.muteSound) {
-                    await stopAudio();
+                    stopAudio();
                 }
             });
 
             ssRef.current.on<Game>("abortgame", async (event) => {
                 console.log("Game Aborted!");
                 setCurrentGame(event.event.data);
-                await playlistAudio([wahwahwahSound, await speak("System off. Goodbye.")]);
+                playAudio(wahwahwahSound, speak("System off. Goodbye."));
             });
 
             ssRef.current.on<Game>("pausegame", async (event) => {
                 console.log("Game Paused!");
                 setCurrentGame(event.event.data);
-                await playlistAudio([whistleSound, await speak("Timeout.")]);
+                playAudio(whistleSound, speak("Timeout!"));
             });
 
             ssRef.current.on<Game>("resumegame", async (event) => {
                 console.log("Game Resumed!");
                 setCurrentGame(event.event.data);
-                await playAudio(whistleSound);
+                playAudio(whistleSound);
             });
 
             ssRef.current.on<Game>("setgoal", async (event) => {
                 console.log("Set Goal!");
                 setCurrentGame(event.event.data);
-                await playAudio(cheerSound);
+                playAudio(cheerSound);
                 setGoal(true);
             });
 
             ssRef.current.on<Game>("cleargoal", async (event) => {
                 console.log("Set Goal!");
                 setCurrentGame(event.event.data);
-                await stopAudio();
+                stopAudio();
                 setGoal(false);
             });
 
@@ -277,9 +268,10 @@ export function useGameCache(ss: Slapshot): GameCache {
             ssRef.current.on("off", async (event) => {
                 const prev = currentGameRef.current;
                 setCurrentGame({...DefaultGame, muteSound: prev.muteSound});                
-                await playAudio(await speak("System off. Goodbye."));
+                playAudio(speak("System off. Goodbye."));
             });
         } else {
+            notify("Disconnected from service.", {error: true, sticky: true, id: "ISSUE_SERVICE_CONNECTION"});
             setInit(false);
         }
     }, [

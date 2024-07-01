@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Slapshot, useSlapshot } from "../hooks/useSlapshot";
-import { DefaultGame, Game, Player } from "../types";
+import { DefaultGame, Game, GameMessage, Player } from "../types";
 import { useGameCache } from "../hooks/useGameCache";
 
 interface SlapshotContextType {
@@ -8,10 +8,7 @@ interface SlapshotContextType {
     players: Player[],
     currentGame: Game,
     goal: boolean,
-    message?: {
-        error: boolean,
-        text: string,
-    }
+    message: GameMessage,
 }
 
 export const SlapshotContext = React.createContext<SlapshotContextType>(

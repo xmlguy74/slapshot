@@ -44,34 +44,23 @@ function App(props: AppProps) {
   
   const [config] = useState<Configuration>(window.CONFIG);
 
-  const { ss, currentGame, goal, message } = useContext(SlapshotContext);
+  const { currentGame, goal, message } = useContext(SlapshotContext);
     
   useEffect(() => {
-    if (ss.ready) {
-      toast.clearWaitingQueue();
-      toast.dismiss();
-      toast("Connected!", { type: 'success'});
-    } else if (ss.ready === false) {
-      toast("Not Connected! Attempting to restore.", { type: 'error', autoClose: false });
-    }
-  }, [ss.ready])  
-
-  useEffect(() => {
     if (message) {
-      // toast.clearWaitingQueue();
-      // toast.dismiss();
-      toast(message.text, { type: message.error ? 'error' : 'success', delay: 0 });
+      if (message.id) {
+        toast.dismiss(message.id);
+      }
+
+      toast(message.text, { 
+        toastId: message.id,
+        type: message.error ? 'error' : 'success', 
+        delay: 0, 
+        autoClose: message.sticky ? false : 3000
+      });
+    
     }
   }, [message]);
-
-  useEffect(() => {
-    toast.clearWaitingQueue();
-    toast.dismiss();
-  const issues = currentGame.issues;
-    Object.getOwnPropertyNames(issues).forEach((key) => {
-      toast(issues[key], { type: 'error', autoClose: false });
-    });
-  }, [currentGame.issues]);
 
   return (
     <AppSection className="App">

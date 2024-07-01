@@ -1,7 +1,7 @@
 import express from 'express';
 import { Level } from 'level';
 import WebSocket from 'ws';
-import { WSCommand, Game, GameUpdate, WSMessage, Player, ResultMessage, MQTTCommand, Manager } from './types';
+import { WSCommand, Game, GameUpdate, WSMessage, Player, ResultMessage, MQTTCommand, Manager, NotifyOptions } from './types';
 import crypto from 'crypto';
 import child_process from 'child_process';
 import { Device, createBluetooth } from "node-ble";
@@ -11,6 +11,7 @@ import fsPromises from 'fs/promises';
 import fs from 'fs';
 import md5 from 'md5';
 import axios from 'axios';
+import cors from 'cors';
 
 import 'dotenv/config';
 
@@ -70,16 +71,17 @@ async function setIssue(id: string, text: string) {
     await updateGame();
 }
 
-async function clearIssue(id: string) {
+async function clearIssue(id: string, text: string) {
     current.issues[id] = undefined;
+    await notify(text, { id });    
     await updateGame();
 }
 
-async function notify(error: boolean, text: string) {
+async function notify(text: string, options?: NotifyOptions) {
     try {
         fireEvent("notify", {
-            error,
-            text
+            text,
+            options
         });
     } catch (e) {
         console.error(e);
@@ -216,6 +218,7 @@ async function endGame() {
 }
 
 const app = express();
+app.use(cors());
 app.use('/api', express.json());
 app.use('/www', express.static('./dist/www'));
 
@@ -561,7 +564,7 @@ async function connectBluetooth() {
             if (state === "Error" && oldState === "OK") {
                 setIssue(ISSUE_LOST_HOME_SENSOR, "Lost connection with home sensor.");
             } else if (state === "OK" && oldState === "Error") {
-                clearIssue(ISSUE_LOST_HOME_SENSOR);
+                clearIssue(ISSUE_LOST_HOME_SENSOR, "Restored connection with home sensor.");
             }
         });
 
@@ -592,7 +595,7 @@ async function connectBluetooth() {
             if (state === "Error" && oldState === "OK") {
                 setIssue(ISSUE_LOST_VISITOR_SENSOR, "Lost connection with visitor sensor.");                
             } else if (state === "OK" && oldState === "Error") {
-                clearIssue(ISSUE_LOST_VISITOR_SENSOR);                
+                clearIssue(ISSUE_LOST_VISITOR_SENSOR, "Restored connection with visitor sensor.");                
             }
         });
 
@@ -694,7 +697,7 @@ async function main() {
                 const data = await connectBluetooth();
                 controller = data.device;
                 destroy = data.destroy;
-                clearIssue(ISSUE_LOST_CONTROLLER);
+                clearIssue(ISSUE_LOST_CONTROLLER, "Restored connection with controller.");
             } catch (e) {
                 setIssue(ISSUE_LOST_CONTROLLER, "Failed to connect to controller.");
             }

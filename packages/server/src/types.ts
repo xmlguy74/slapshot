@@ -32,6 +32,11 @@ export type GameUpdate = {
     timeRemaining: number;
 }
 
+export type NotifyOptions = {
+    id?: string,
+    error?: boolean,
+}
+
 export interface MQTTCommand {
     command: 'new'|'tapin'|'start'|'restart'|'abort'|'score'|'update'|'end'|'pause'|'off'|'reboot',
     [key: string]: any,

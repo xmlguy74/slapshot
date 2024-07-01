@@ -7,9 +7,21 @@ export const STATE_1UP           = 54;
 export const STATE_NOGOAL        = 55;
 export const STATE_GAMEOVER      = 56;
 
-export type Notify = {
-    error: boolean,
+export type GameMessage = {
+    id?: string,
+    error: boolean, 
     text: string,
+    sticky: boolean,
+}
+
+export type Notify = {
+    text: string,
+    options?: NotifyOptions,
+}
+
+export type NotifyOptions = {
+    id?: string,
+    error?: boolean,
 }
 
 export type Manager = {
