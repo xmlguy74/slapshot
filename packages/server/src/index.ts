@@ -14,6 +14,7 @@ import axios from 'axios';
 import cors from 'cors';
 
 import 'dotenv/config';
+import { delay } from './utils';
 
 const PORT = 3001;
 const GAME_TIME = 300; /* 5 min */
@@ -73,8 +74,9 @@ async function setIssue(id: string, text: string) {
 
 async function clearIssue(id: string, text: string) {
     current.issues[id] = undefined;
-    await notify(text, { id });    
     await updateGame();
+    await delay(500);
+    await notify(text, { id });
 }
 
 async function notify(text: string, options?: NotifyOptions) {
@@ -331,7 +333,7 @@ app.get('/api/say', async(req, res) => {
     if (audio) {
         res.status(200)
             .setHeader('Content-Type', 'audio/wav')
-            .send(audio);
+            .sendFile(audio);
     } else {
         res.status(500).send("Failed to generate audio clip.");
     }
@@ -609,7 +611,7 @@ async function connectBluetooth() {
     return { device, destroy };
 }
 
-async function generateAudioClip(text: string, speed: number = 1): Promise<Buffer> {
+async function generateAudioClip(text: string, speed: number = 1): Promise<string> {
     try {
         const audioRequest = {
             model: 'tts-1',
@@ -649,8 +651,7 @@ async function generateAudioClip(text: string, speed: number = 1): Promise<Buffe
             }
         }
 
-        const content = await fsPromises.readFile(clipPath);
-        return content;
+        return clipPath;
     } catch (e) {
         console.error(e);
         return null;    

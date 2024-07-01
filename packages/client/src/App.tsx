@@ -1,7 +1,7 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { AppSection, BodySection, HeaderSection, StatusbarSection, TaskbarSection } from './App.styled';
 import { DateTime, DateTimeMode } from './components/DateTime';
-import { ToastContainer, toast } from 'react-toastify';
+import { Id, ToastContainer, toast } from 'react-toastify';
 
 import 'react-toastify/dist/ReactToastify.css';
 import { Leaderboard } from './components/Leaderboard';
@@ -53,7 +53,7 @@ function App(props: AppProps) {
       }
 
       toast(message.text, { 
-        toastId: message.id,
+        toastId: message.sticky ? message.id : undefined,
         type: message.error ? 'error' : 'success', 
         delay: 0, 
         autoClose: message.sticky ? false : 3000

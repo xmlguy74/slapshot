@@ -60,7 +60,7 @@ export function useGameCache(ss: Slapshot): GameCache {
             playAudio(options?.error ? errorSound : notifySound, speak(text));
             setMessage({
                 error: options?.error ?? false, 
-                text: text, 
+                text, 
                 sticky: options?.sticky ?? false, 
                 id: options?.id
             });
@@ -132,7 +132,7 @@ export function useGameCache(ss: Slapshot): GameCache {
             ssRef.current.on<Notify>("notify", async (event) => {
                 console.log("Notify!");
                 const n = event.event.data;
-                notify(n.text, { error: n.options?.error ?? false, sticky: false, id: n.options?.id});
+                notify(n.text, { error: !!n.options?.error, sticky: false, id: n.options?.id});
             });
 
             ssRef.current.on<Game>("newgame", async (event) => {
