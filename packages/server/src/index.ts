@@ -6,6 +6,13 @@ import crypto from 'crypto';
 import child_process from 'child_process';
 import { Device, createBluetooth } from "node-ble";
 import { exec } from 'child_process';
+import path from 'path';
+import fsPromises from 'fs/promises';
+import fs from 'fs';
+import md5 from 'md5';
+import axios from 'axios';
+
+import 'dotenv/config';
 
 const PORT = 3001;
 const GAME_TIME = 300; /* 5 min */
@@ -28,6 +35,8 @@ const signature = crypto.randomBytes(16).toString('hex');
 const db = new Level('db', { valueEncoding: 'json' });
 const players = db.sublevel('players', { valueEncoding: 'json' });
 const games = db.sublevel('games', { valueEncoding: 'json' });
+
+const audioPath = path.join(process.cwd(), 'db/audio');
 
 const current: Game = {
     state: STATE_OFF,
@@ -305,6 +314,26 @@ app.get('/api/games/current', async(req, res) => {
     }
 });
 
+app.get('/api/say', async(req, res) => {
+    const text = req.query.text as string;
+    let speed = 1;
+    if (req.query.speed) {
+        speed = parseFloat(req.query.speed as string);
+        if (isNaN(speed) || speed < 0.25 || speed > 4) {
+            res.status(400).send("Invalid speed. Must be between 0.25 and 4.");
+            return;
+        }
+    }
+    const audio = await generateAudioClip(text, speed);
+    if (audio) {
+        res.status(200)
+            .setHeader('Content-Type', 'audio/wav')
+            .send(audio);
+    } else {
+        res.status(500).send("Failed to generate audio clip.");
+    }
+});
+
 function fireEvent(name: string, data?: any) {
     wss.clients.forEach(c => c.readyState == c.OPEN && c.send(JSON.stringify({
         type: 'event',
@@ -365,9 +394,9 @@ wss.on("connection", (websocketConnection) => {
                     result: current,
                 }
                 websocketConnection.send(JSON.stringify(msg));  
-                break;  
-            }            
-
+                break;
+            }         
+            
             default: {
                 console.warn("Unhandled websocket command. " + cmd?.type);
             }
@@ -448,7 +477,11 @@ async function connectBluetooth() {
             
             switch (state) {
                 case STATE_TAPIN:
-                    newGame();
+                    if (oldState === STATE_PLAYING || oldState === STATE_TIMEOUT || oldState === STATE_GOAL) {
+                        restartGame();
+                    } else {
+                        newGame();
+                    }
                     break;
 
                 case STATE_PLAYING:
@@ -573,6 +606,54 @@ async function connectBluetooth() {
     return { device, destroy };
 }
 
+async function generateAudioClip(text: string, speed: number = 1): Promise<Buffer> {
+    try {
+        const audioRequest = {
+            model: 'tts-1',
+            voice: 'echo',
+            speed,
+            input: text,
+            response_format: 'wav',
+        };
+
+        const clipFilename = `${audioRequest.voice}-${audioRequest.speed}-${md5(text)}.${audioRequest.response_format ?? 'mp3'}`;
+        
+        //do we already have the clip?
+        const clipPath = path.join(audioPath, clipFilename);
+        if (!fs.existsSync(clipPath)) {
+            
+            //generate the clip
+            const resp = await axios.post('https://api.openai.com/v1/audio/speech',
+                audioRequest, {
+                    headers: {
+                        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+                        "Content-Type": "application/json"
+                    },
+                    responseType: 'arraybuffer'
+                }
+            );
+
+            if (resp.status == 200) {
+                const file = await fsPromises.open(clipPath, 'wx');
+                try {
+                    file.write(resp.data);
+                } finally {
+                    file.close();
+                }
+            } else {
+                console.error("Failed to generate audio clip. " + resp.statusText);
+                return null;
+            }
+        }
+
+        const content = await fsPromises.readFile(clipPath);
+        return content;
+    } catch (e) {
+        console.error(e);
+        return null;    
+    }
+}
+
 function turnOnLight() {
     exec('gpio write 6 1', (error, stdout, stderr) => {
         if (error) {
@@ -589,7 +670,6 @@ function turnOffLight() {
     });
 }
 
-
 async function main() {    
     
     let controller: Device
@@ -599,6 +679,7 @@ async function main() {
         //check health
         if (controller) {
             if (!await controller.isConnected()) {
+                console.error('Lost connection with controller.');
                 setIssue(ISSUE_LOST_CONTROLLER, "Lost connection with controller.")
                 destroy();
                 controller = undefined;
@@ -636,6 +717,12 @@ async function main() {
     process.on('SIGINT', shutdown);
     process.on('SIGTERM', shutdown);
 
+    //setup the cache directory for audio files
+    if (!fs.existsSync(audioPath)) {
+        await fsPromises.mkdir(audioPath);
+    }
+    
+    //setup GPIO pin for the goal light
     exec('gpio mode 6 out', (error, stdout, stderr) => {
         if (error) {
             console.error('Failed to configure GPIO 6 for output. ', error);
@@ -643,16 +730,6 @@ async function main() {
             console.log('Configured GPIO 6 for output.');
         }
     });
-
-    const ps = await players.values<string, Player>(null).all();
-    for (let i = 0; i < ps.length; i++) {
-        const p = ps[i];
-        if (p.audio) {
-            console.log('Cleaning up audio for player: ' + p.id);
-            p.audio = undefined;
-            await players.put(p.id, p, null);
-        }
-    }
 
     const server = app.listen(PORT, () => {
         console.log(`[server]: Server is running at http://localhost:${PORT}`);

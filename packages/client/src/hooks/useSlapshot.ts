@@ -77,7 +77,7 @@ export interface Slapshot {
 }
 
 export type SendCallback = (msg: Message) => boolean | void;
-export type EventHandler<T = any> = (event: EventMessage<T>) => void;
+export type EventHandler<T = any> = (event: EventMessage<T>) => void | Promise<void>;
 
 export function useSlapshot(hostname: string): Slapshot {
     

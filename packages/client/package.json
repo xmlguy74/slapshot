@@ -13,8 +13,12 @@
     "@types/node": "^20.8.10",
     "@types/react": "^18.2.33",
     "@types/react-dom": "^18.2.14",
+    "axios": "^1.7.2",
+    "dotenv": "^16.4.5",
     "format-duration": "^3.0.2",
+    "howler": "^2.2.4",
     "material-design-icons": "^3.0.1",
+    "md5": "^2.3.0",
     "moment": "^2.29.4",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
@@ -51,6 +55,8 @@
     ]
   },
   "devDependencies": {
+    "@types/howler": "^2.2.11",
+    "@types/md5": "^2.3.5",
     "sass": "^1.49.0"
   },
   "main": "index.js",
