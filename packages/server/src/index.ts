@@ -102,6 +102,7 @@ async function newGame() {
     try {
         current.home.name = '';
         current.visitor.name = '';
+        turnOffLight();
         fireEvent("newgame", current);
     } catch (e) {
         console.error(e);
@@ -126,6 +127,7 @@ async function tapIn(team: 'home'|'visitor', player: string) {
 
 async function startGame() {
     try {
+        turnOffLight();
         fireEvent("startgame", current);
     } catch (e) {
         console.error(e);
@@ -134,6 +136,7 @@ async function startGame() {
 
 async function resumeGame() {
     try {
+        turnOffLight();
         fireEvent("resumegame", current);
     } catch (e) {
         console.error(e);
@@ -142,6 +145,7 @@ async function resumeGame() {
 
 async function pauseGame() {
     try {
+        turnOffLight();
         fireEvent("pausegame", current);
     } catch (e) {
         console.error(e);
@@ -150,6 +154,7 @@ async function pauseGame() {
 
 async function restartGame () {
     try {
+        turnOffLight();
         fireEvent("restartgame", current);
     } catch (e) {
         console.error(e);
@@ -158,6 +163,7 @@ async function restartGame () {
 
 async function abortGame() {
     try {
+        turnOffLight();
         fireEvent("abortgame", current);
     } catch (e) {
         console.error(e);
@@ -212,7 +218,7 @@ async function endGame() {
             await players.put(visitor.id, visitor, null);
             fireEvent("stats", visitor);
         }
-        
+        turnOffLight();        
         fireEvent("gameover", current);
     } catch (e) {
         console.error(e);

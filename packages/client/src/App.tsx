@@ -44,7 +44,7 @@ function App(props: AppProps) {
   
   const [config] = useState<Configuration>(window.CONFIG);
 
-  const { currentGame, goal, message } = useContext(SlapshotContext);
+  const { currentGame, message } = useContext(SlapshotContext);
     
   useEffect(() => {
     if (message) {
@@ -122,7 +122,7 @@ function App(props: AppProps) {
         limit={3}
         theme='colored' />
 
-      <Goal text={goal && "GOAL!"}/>
+      <Goal text={currentGame.state === STATE_GOAL && "GOAL!"}/>
     
     </AppSection>
   );

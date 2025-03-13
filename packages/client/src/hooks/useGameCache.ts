@@ -8,7 +8,6 @@ import { error } from "console";
 export interface GameCache {
     players: Player[],
     currentGame: Game,
-    goal: boolean,
     message: GameMessage,
 }
 
@@ -31,10 +30,6 @@ export function useGameCache(ss: Slapshot): GameCache {
     const [currentGame, setCurrentGame] = useState<Game>(DefaultGame);    
     const currentGameRef = useRef<Game>();
     currentGameRef.current = currentGame;
-
-    const [goal, setGoal] = useState<boolean>(false);
-    const goalRef = useRef(goal);
-    goalRef.current = goal;
 
     const [message, setMessage] = useState<GameMessage>(null);
     const messagesRef = useRef(message);
@@ -233,14 +228,12 @@ export function useGameCache(ss: Slapshot): GameCache {
                 console.log("Set Goal!");
                 setCurrentGame(event.event.data);
                 playAudio(cheerSound);
-                setGoal(true);
             });
 
             ssRef.current.on<Game>("cleargoal", async (event) => {
                 console.log("Set Goal!");
                 setCurrentGame(event.event.data);
                 stopAudio();
-                setGoal(false);
             });
 
             ssRef.current.on<Player>("stats", (event) => {
@@ -288,7 +281,6 @@ export function useGameCache(ss: Slapshot): GameCache {
     return {
         players,
         currentGame,
-        goal,
         message
     }
 
