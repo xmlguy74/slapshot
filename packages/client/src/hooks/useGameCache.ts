@@ -6,7 +6,7 @@ import useSound from 'use-sound';
 export interface GameCache {
     players: Player[],
     currentGame?: Game,
-    goal: number,
+    goal: boolean,
     message?: {
         error: boolean,
         text: string,
@@ -23,7 +23,7 @@ export function useGameCache(ss: Slapshot): GameCache {
     const currentGameRef = useRef<Game>();
     currentGameRef.current = currentGame;
 
-    const [goal, setGoal] = useState<number>(0);
+    const [goal, setGoal] = useState<boolean>(false);
     const goalRef = useRef(goal);
     goalRef.current = goal;
 
@@ -75,6 +75,7 @@ export function useGameCache(ss: Slapshot): GameCache {
                 setCurrentGame(event.event.data);
                 stopAllSounds();
                 chargeSound();
+                setGoal(false);
             });
 
             ssRef.current.on<Game>("restartgame", (event) => {
@@ -82,12 +83,14 @@ export function useGameCache(ss: Slapshot): GameCache {
                 setCurrentGame(event.event.data);
                 stopAllSounds();
                 buzzerSound();
+                setGoal(false);
             });
 
             ssRef.current.on<Game>("startgame", (event) => {
                 console.log("Start game!");
                 const wasPaused = currentGameRef.current?.state === 'paused';
                 setCurrentGame(event.event.data);
+                setGoal(false);
                 
                 stopAllSounds();
                 if (wasPaused) {
@@ -102,6 +105,7 @@ export function useGameCache(ss: Slapshot): GameCache {
                 setCurrentGame(event.event.data);
                 stopAllSounds();
                 buzzerSound();
+                setGoal(false);
             });
 
             ssRef.current.on<Game>("1up", (event) => {
@@ -128,6 +132,7 @@ export function useGameCache(ss: Slapshot): GameCache {
                 setCurrentGame(event.event.data);
                 stopAllSounds();
                 wahwahwahSound();
+                setGoal(false);
             });
 
             ssRef.current.on<Game>("pausegame", (event) => {
@@ -135,6 +140,7 @@ export function useGameCache(ss: Slapshot): GameCache {
                 setCurrentGame(event.event.data);
                 stopAllSounds();
                 whistleSound();
+                setGoal(false);
             });
 
             ssRef.current.on<Game>("score", (event) => {
@@ -142,9 +148,9 @@ export function useGameCache(ss: Slapshot): GameCache {
                 setCurrentGame(event.event.data);
                 stopAllSounds();
                 cheerSound();
-                setGoal(goalRef.current+1);
+                setGoal(true);
                 setTimeout(() => {
-                    setGoal(goalRef.current-1);
+                    setGoal(false);
                 }, 4000);
             });
 
@@ -173,6 +179,7 @@ export function useGameCache(ss: Slapshot): GameCache {
             ssRef.current.on("off", (event) => {
                 setCurrentGame(null);
                 stopAllSounds();
+                setGoal(false);
             });
         }        
     }, [

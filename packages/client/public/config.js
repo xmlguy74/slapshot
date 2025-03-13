@@ -1,6 +1,6 @@
 
 var CONFIG = {
-    slapshot: "localhost:3001",
+    slapshot: "slapshot-display:3001",
     theme: "retro",
     title: 'Morris',
     subtitle: 'Family Gameroom',
