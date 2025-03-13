@@ -92,6 +92,7 @@ async function notify(text: string, options?: NotifyOptions) {
 
 async function off() {
     try {
+        turnOffLight();
         fireEvent("off");
     } catch (e) {
         console.error(e);
