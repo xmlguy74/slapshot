@@ -464,14 +464,14 @@ async function connectBluetooth() {
         const visitorStatus = await visitorService.getCharacteristic('aa11ffc9-aa27-4789-8e62-7dafaa5152d2')
 
         //read current state
-        current.state = (await gameState.readValue()).readFloatLE();
-        current.timeRemaining = (await timeRemaining.readValue()).readFloatLE();
-        current.muteSound = (await muteSound.readValue()).readUInt8() == 1;
+        current.state = (await gameState.readValue()).readInt32LE();
+        current.timeRemaining = (await timeRemaining.readValue()).readInt32LE();
+        current.muteSound = (await muteSound.readValue())[0] == 1;
         current.home.player = (await homePlayer.readValue()).toString('utf-8');
-        current.home.score = (await homeScore.readValue()).readFloatLE();
+        current.home.score = (await homeScore.readValue()).readInt32LE();
         current.home.status = (await homeStatus.readValue()).toString('utf-8');
         current.visitor.player = (await visitorPlayer.readValue()).toString('utf-8');
-        current.visitor.score = (await visitorScore.readValue()).readFloatLE();
+        current.visitor.score = (await visitorScore.readValue()).readInt32LE();
         current.visitor.status = (await visitorStatus.readValue()).toString('utf-8');
 
         console.info ("Current game:", current);
@@ -482,7 +482,7 @@ async function connectBluetooth() {
 
         await gameState.startNotifications()
         gameState.on('valuechanged', buffer => {
-            const state = buffer.readFloatLE();            
+            const state = buffer.readInt32LE();            
             const oldState = current.state;
             current.state = state;
             console.log("Game State: " + state);
@@ -530,7 +530,7 @@ async function connectBluetooth() {
 
         await timeRemaining.startNotifications()
         timeRemaining.on('valuechanged', buffer => {
-            const state = buffer.readFloatLE();
+            const state = buffer.readInt32LE();
             current.timeRemaining = state;
             console.log("Time Remaining: " + state);
             
@@ -539,7 +539,7 @@ async function connectBluetooth() {
 
         await muteSound.startNotifications()
         muteSound.on('valuechanged', buffer => {
-            const state = buffer.readUInt8() == 1;
+            const state = buffer[0] == 1;
             current.muteSound = state;
             console.log("Mute Sound: " + state);
             
@@ -558,7 +558,7 @@ async function connectBluetooth() {
         
         await homeScore.startNotifications()
         homeScore.on('valuechanged', buffer => {
-            const state = buffer.readFloatLE();
+            const state = buffer.readInt32LE();
             current.home.score = state;
             console.log("Home Score: " + state);
         });      
@@ -589,7 +589,7 @@ async function connectBluetooth() {
 
         await visitorScore.startNotifications()
         visitorScore.on('valuechanged', buffer => {
-            const state = buffer.readFloatLE();
+            const state = buffer.readInt32LE();
             current.visitor.score = state;
             console.log("Visitor Score: " + state);
         });     
