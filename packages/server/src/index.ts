@@ -446,22 +446,22 @@ async function connectBluetooth() {
         console.log("Got GATT server");
         
         const gameService = await gattServer.getPrimaryService('1689cb79-5ce5-4485-af61-dc472b3ba097');
-        //(await gameService.characteristics()).forEach(c => console.log(c));        
         const gameState = await gameService.getCharacteristic('53d0f4b3-c05f-4ff0-bfd4-2097f76bee6a')
         const timeRemaining = await gameService.getCharacteristic('63427eed-5a3c-4ef3-a9f6-cea59992c584')
         const muteSound = await gameService.getCharacteristic('a2b96b99-6298-46f7-a5b6-dea7652380f0')
 
         const homeService = await gattServer.getPrimaryService('0c88f0aa-6831-4ffa-8684-308e3c476a39');
-        //(await homeService.characteristics()).forEach(c => console.log(c));
         const homePlayer = await homeService.getCharacteristic('33acbdbe-026d-47c3-a37b-423999537afc')
         const homeScore = await homeService.getCharacteristic('89c82c4d-e536-4d4c-a165-7afc3dcd0e00')
         const homeStatus = await homeService.getCharacteristic('4efdd30c-4011-455c-83b9-e7d72104c400')
         
         const visitorService = await gattServer.getPrimaryService('e7cbeac4-8d90-44e2-9e05-f44c6e06899b');
-        //(await visitorService.characteristics()).forEach(c => console.log(c));
         const visitorPlayer = await visitorService.getCharacteristic('9a4e5c0d-51a1-48d5-b279-20a73c017577')
         const visitorScore = await visitorService.getCharacteristic('1b2661f4-f67d-4367-8749-6be6ca05155d')
         const visitorStatus = await visitorService.getCharacteristic('aa11ffc9-aa27-4789-8e62-7dafaa5152d2')
+
+        const controlService = await gattServer.getPrimaryService('912bdc44-14b1-42f3-b0bd-a86eac5c4123');
+        const commandState = await controlService.getCharacteristic('3168d31b-2f18-404c-8695-741a4fd400b4')
 
         //read current state
         current.state = (await gameState.readValue()).readInt32LE();
@@ -479,6 +479,20 @@ async function connectBluetooth() {
         updateGame();
 
         console.log("Starting notifications")
+
+        await commandState.startNotifications();
+        commandState.on('valuechanged', buffer => {
+            const command = buffer.toString('utf-8');
+            console.log("Command: " + command);
+            switch (command) {
+                case 'reboot':
+                    reboot();
+                    break;
+                default:
+                    console.warn("Unknown command: " + command);
+                    break;
+            }
+        });
 
         await gameState.startNotifications()
         gameState.on('valuechanged', buffer => {
